@@ -1,3 +1,6 @@
+using MongoDB.Driver;
+using server.Logging;
+
 namespace server.DBmgmt;
 
 public class DBConfig
@@ -47,7 +50,8 @@ public class DBConfig
                 Console.WriteLine("Enter DB AuthSource: ");
                 dbConfig.AuthSource = Console.ReadLine();
                 
-                isConnectionSuccessful = await Database.CheckConnection(dbConfig);
+                var database = new Database(dbConfig);
+                isConnectionSuccessful = await database.CheckConnection();
                 attempts++;
             }
             else
@@ -56,15 +60,28 @@ public class DBConfig
                 var connectionString = Console.ReadLine();
                 if (connectionString != null)
                 {
-                    dbConfig = ConnectionString.Read(connectionString);
+                    try
+                    {
+                        dbConfig = ConnectionString.Read(connectionString);
+                    }
+                    catch (MongoConfigurationException exception)
+                    {
+                        Console.WriteLine("Provided string is not a valid connection string!");
+                        Logger logger = new Logger();
+                        logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, date: DateTime.Now ));
+                        isConnectionSuccessful = false;
+                        attempts++;
+                        continue;
+                    }
                 }
-
-                isConnectionSuccessful = await Database.CheckConnection(dbConfig);
+                
+                var database = new Database(dbConfig);
+                isConnectionSuccessful = await database.CheckConnection();
                 attempts++;
             }
         }
 
-        if (attempts > 5)
+        if (attempts >= 5)
         {
             Console.WriteLine("Configuration failed. Try again!");
             Environment.Exit(0);

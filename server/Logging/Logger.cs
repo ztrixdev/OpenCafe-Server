@@ -7,7 +7,8 @@ public class Logger
     public void New(Log log)
     {
         var path = LogFile.Locate();
-        var writer = File.AppendText(path);
-        writer.WriteLine(JsonSerializer.Serialize(log));
+        Log[] logs = JsonSerializer.Deserialize<Log[]>(File.ReadAllText(path));
+        logs = logs.Append(log).ToArray();
+        File.WriteAllText(path, JsonSerializer.Serialize(logs));
     }
 }

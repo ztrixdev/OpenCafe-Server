@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
-
 namespace server.Logging;
 
 public class Log

@@ -1,24 +1,48 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using server.Logging;
 
 namespace server.DBmgmt;
 
 public class Database
 {
-    public static async Task<bool> CheckConnection(DBConfig dbConfig)
+    private string? connectionString;
+    private MongoClient? client;
+    private IMongoDatabase? _database;
+
+    public Database(DBConfig config)
+    {
+        connectionString = ConnectionString.Create(config);
+        client = new MongoClient(connectionString);
+        _database = client.GetDatabase(config.Name);
+    }
+    
+    public async Task<bool> CheckConnection()
     {
         try
         {
-            var connectionString = ConnectionString.Create(dbConfig);
-            var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(dbConfig.Name);
-            await database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1));
+            await _database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1));
             return true;
         }
-        catch (Exception e)
+        catch (MongoAuthenticationException exception)
         {
-            Console.Error.WriteLine(e);
+            Logger logger = new Logger();
+            logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            Console.WriteLine("Unable to authenticate, re-enter your credentials.");
             return false;
         }
+        catch (MongoConfigurationException exception)
+        {
+            Logger logger = new Logger();
+            logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            Console.WriteLine("THe connection string is invalid.");
+            return false;
+        }
+    }
+
+    public async Task<BsonDocument> RunCommand(BsonDocument command)
+    {
+        var result = await _database.RunCommandAsync<BsonDocument>(command);
+        return result;
     }
 }
