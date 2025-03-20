@@ -1,14 +1,15 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using server.Logging;
+using System.Linq;
 
 namespace server.DBmgmt;
 
 public class Database
 {
-    private string? connectionString;
-    private MongoClient? client;
-    private IMongoDatabase? _database;
+    private string connectionString;
+    private MongoClient client;
+    private IMongoDatabase _database;
 
     public Database(DBConfig config)
     {
@@ -17,32 +18,68 @@ public class Database
         _database = client.GetDatabase(config.Name);
     }
     
+    public async Task<BsonDocument> RunCommand(BsonDocument command)
+    {
+        var result = await _database.RunCommandAsync<BsonDocument>(command);
+        return result;
+    }
+    
     public async Task<bool> CheckConnection()
     {
         try
         {
-            await _database.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1));
+            await RunCommand(new BsonDocument("ping", 1));
             return true;
         }
         catch (MongoAuthenticationException exception)
         {
-            Logger logger = new Logger();
-            logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            var logger = new Logger();
+            await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
             Console.WriteLine("Unable to authenticate, re-enter your credentials.");
             return false;
         }
         catch (MongoConfigurationException exception)
         {
-            Logger logger = new Logger();
-            logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            var logger = new Logger();
+            await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
             Console.WriteLine("THe connection string is invalid.");
             return false;
         }
     }
 
-    public async Task<BsonDocument> RunCommand(BsonDocument command)
+    public async Task<bool> CheckForOpenCafe()
     {
-        var result = await _database.RunCommandAsync<BsonDocument>(command);
-        return result;
+        var areCollectionsPresent = new Dictionary<string, bool>()
+        {
+            { "customers", false }, { "admins", false },
+            { "dishes", false }, { "images", false }
+        };
+        
+        var collectionNames = await _database.ListCollectionNamesAsync().Result.ToListAsync<string>();
+        foreach (string name in collectionNames)
+        {
+            if (areCollectionsPresent.ContainsKey(name))
+            {
+                areCollectionsPresent[name] = true;
+            }
+        }
+
+        foreach (KeyValuePair<string, bool> kvp in areCollectionsPresent)
+        {
+            if (kvp.Value == false)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public async Task InitCollections()
+    {
+        await _database.CreateCollectionAsync("customers");
+        await _database.CreateCollectionAsync("admins");
+        await _database.CreateCollectionAsync("dishes");
+        await _database.CreateCollectionAsync("images");
     }
 }

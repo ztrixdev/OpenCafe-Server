@@ -7,7 +7,9 @@
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5056",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ENCRYPTION_KEY": "Sln56o64I/vHO6IRgsmH9Q==",
+        "ENCRYPTION_IV": "a2OagrAWe9/S6TwsA9hSUA=="
       }
     },
     "https": {

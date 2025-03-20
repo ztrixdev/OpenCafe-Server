@@ -22,9 +22,11 @@ class ConfigFile
 
         if (File.Exists(ConfigFilePath))
         {
-            var json = File.ReadAllText(ConfigFilePath);
+            var json = await File.ReadAllTextAsync(ConfigFilePath);
             json = CryptoHelper.Decrypt(json, key, iv);
-            return JsonSerializer.Deserialize<DBConfig>(json);
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+            
+            return await JsonSerializer.DeserializeAsync<DBConfig>(stream);
         }
 
         if (!Directory.Exists(DirectoryPath))

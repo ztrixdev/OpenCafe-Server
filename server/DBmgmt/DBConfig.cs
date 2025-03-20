@@ -30,7 +30,7 @@ public class DBConfig
             }
         }
 
-        DBConfig dbConfig = new DBConfig();
+        var dbConfig = new DBConfig();
         var isConnectionSuccessful = false;
         var attempts = 0;
         while (!isConnectionSuccessful && attempts < 5)
@@ -67,7 +67,7 @@ public class DBConfig
                     catch (MongoConfigurationException exception)
                     {
                         Console.WriteLine("Provided string is not a valid connection string!");
-                        Logger logger = new Logger();
+                        var logger = new Logger();
                         logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, date: DateTime.Now ));
                         isConnectionSuccessful = false;
                         attempts++;

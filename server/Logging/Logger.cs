@@ -1,14 +1,19 @@
+using System.Text;
 using System.Text.Json;
 
 namespace server.Logging;
 
 public class Logger
 {
-    public void New(Log log)
+    public async Task New(Log log)
     {
         var path = LogFile.Locate();
-        Log[] logs = JsonSerializer.Deserialize<Log[]>(File.ReadAllText(path));
+        var json = await File.ReadAllTextAsync(path);
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+        
+        var logs = await JsonSerializer.DeserializeAsync<Log[]>(stream);
         logs = logs.Append(log).ToArray();
-        File.WriteAllText(path, JsonSerializer.Serialize(logs));
+        
+        await File.WriteAllTextAsync(path, JsonSerializer.Serialize(logs));
     }
 }
