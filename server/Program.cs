@@ -1,1 +1,4 @@
-Console.WriteLine("Hallo Welt! Das ist OpenCafe!");
+using server;
+
+DBService db = new DBService();
+await db.Start();

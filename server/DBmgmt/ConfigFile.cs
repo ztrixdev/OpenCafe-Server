@@ -15,7 +15,7 @@ class ConfigFile
 
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
         {
-            Console.Error.WriteLine("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
+            await Console.Error.WriteLineAsync("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
             Environment.Exit(1);
             return null;
         }
@@ -23,25 +23,33 @@ class ConfigFile
         if (File.Exists(ConfigFilePath))
         {
             var json = await File.ReadAllTextAsync(ConfigFilePath);
-            json = CryptoHelper.Decrypt(json, key, iv);
-            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+            json = await CryptoHelper.DecryptAsync(json, key, iv);
             
-            return await JsonSerializer.DeserializeAsync<DBConfig>(stream);
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+            return await JsonSerializer.DeserializeAsync<DBConfig>(stream); 
         }
 
         if (!Directory.Exists(DirectoryPath))
         {
             Directory.CreateDirectory(DirectoryPath);
         }
+
         var init = await DBConfig.Init();
-        return JsonSerializer.Deserialize<DBConfig>(CryptoHelper.Decrypt(New(init, key, iv), key, iv));
+        var encryptedInit = await CryptoHelper.DecryptAsync(await New(init, key, iv), key, iv); 
+        
+        return await Task.FromResult(JsonSerializer.Deserialize<DBConfig>(encryptedInit)); 
     }
 
-    private static string New(DBConfig dbConfig, string key, string iv)
-    {
-        var json = JsonSerializer.Serialize(dbConfig);
-        json = CryptoHelper.Encrypt(json, key, iv);
-        File.WriteAllText(ConfigFilePath, json);
-        return File.ReadAllText(ConfigFilePath);
+    private static async Task<string> New(DBConfig dbConfig, string key, string iv)
+    {   
+        using (var ms = new MemoryStream())
+        {
+            await JsonSerializer.SerializeAsync(ms, dbConfig);
+            ms.Seek(0, SeekOrigin.Begin);
+            var serializedContent = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+            serializedContent = await CryptoHelper.EncryptAsync(serializedContent, key, iv);
+            await File.WriteAllTextAsync(ConfigFilePath, serializedContent);
+        }
+        return await File.ReadAllTextAsync(ConfigFilePath);
     }
 }

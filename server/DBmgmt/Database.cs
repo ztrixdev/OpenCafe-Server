@@ -2,6 +2,8 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using server.Logging;
 using System.Linq;
+using server.Collections;
+using server.Helpers;
 
 namespace server.DBmgmt;
 
@@ -77,9 +79,27 @@ public class Database
 
     public async Task InitCollections()
     {
+        var key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
+        var iv = Environment.GetEnvironmentVariable("ENCRYPTION_IV");
+        
+        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
+        {
+            Console.Error.WriteLine("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
+            Environment.Exit(1);
+            return;
+        }
+
         await _database.CreateCollectionAsync("customers");
         await _database.CreateCollectionAsync("admins");
         await _database.CreateCollectionAsync("dishes");
         await _database.CreateCollectionAsync("images");
+        
+        var firstHeadToken = await new Admins().GenToken();
+        Console.WriteLine("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
+        await File.WriteAllTextAsync(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"/OpenCafe/firsthead_token.txt", firstHeadToken);
+        
+        firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
+        var adminCollection = _database.GetCollection<BsonDocument>("admins");
+        await adminCollection.InsertOneAsync(new Admin(name: "FIRSTADMIN", role: "head",  token: firstHeadToken).ToBsonDocument());
     }
 }

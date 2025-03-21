@@ -4,7 +4,7 @@ namespace server.Helpers;
 
 public class CryptoHelper
 {
-    public static string Encrypt(string plainText, string key, string iv)
+    public static async Task<string> EncryptAsync(string plainText, string key, string iv)
     {
         if (string.IsNullOrEmpty(plainText))
             throw new ArgumentException("Plain text cannot be null or empty.");
@@ -22,11 +22,11 @@ public class CryptoHelper
 
             using (MemoryStream ms = new MemoryStream())
             {
-                using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                await using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
                 {
-                    using (StreamWriter sw = new StreamWriter(cs))
+                    await using (StreamWriter sw = new StreamWriter(cs))
                     {
-                        sw.Write(plainText); 
+                        await sw.WriteAsync(plainText); 
                     }
                     encryptedBytes = ms.ToArray();
                 }
@@ -36,7 +36,7 @@ public class CryptoHelper
         return Convert.ToBase64String(encryptedBytes); 
     }
     
-    public static string Decrypt(string cipherText, string key, string iv)
+    public static async Task<string> DecryptAsync(string cipherText, string key, string iv)
     {
         if (string.IsNullOrEmpty(cipherText))
             throw new ArgumentException("Cipher text cannot be null or empty.");
@@ -56,11 +56,11 @@ public class CryptoHelper
 
             using (MemoryStream ms = new MemoryStream(cipherBytes))
             {
-                using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                await using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                 {
                     using (StreamReader sr = new StreamReader(cs))
                     {
-                        decryptedText = sr.ReadToEnd(); 
+                        decryptedText = await sr.ReadToEndAsync(); 
                     }
                 }
             }

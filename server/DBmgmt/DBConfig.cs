@@ -26,7 +26,7 @@ public class DBConfig
             }
             catch (FormatException)
             {
-                Console.WriteLine("Please enter a valid integer!");
+                await Console.Error.WriteLineAsync("Please enter a valid integer!");
             }
         }
 
@@ -66,7 +66,7 @@ public class DBConfig
                     }
                     catch (MongoConfigurationException exception)
                     {
-                        Console.WriteLine("Provided string is not a valid connection string!");
+                        await Console.Error.WriteLineAsync("Provided string is not a valid connection string!");
                         var logger = new Logger();
                         logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, date: DateTime.Now ));
                         isConnectionSuccessful = false;
@@ -83,7 +83,7 @@ public class DBConfig
 
         if (attempts >= 5)
         {
-            Console.WriteLine("Configuration failed. Try again!");
+            await Console.Error.WriteLineAsync("Configuration failed. Try again!");
             Environment.Exit(0);
         }
 

@@ -9,9 +9,9 @@ public class Log
 
     public Log (string? type, string? message, string? where , DateTime? date)
     {
-        this.Type = type;
-        this.Message = message;
-        this.Where = where;
-        this.Date = date;
+        Type = type;
+        Message = message;
+        Where = where;
+        Date = date;
     }
 }
