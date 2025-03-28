@@ -1,4 +1,4 @@
 using server;
 
-DBService db = new DBService();
-await db.Start();
+var service = new DBService();
+var db = await service.Start();

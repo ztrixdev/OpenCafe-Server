@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace server.Helpers;
 
-public class CryptoHelper
+public static class CryptoHelper
 {
     public static async Task<string> EncryptAsync(string plainText, string key, string iv)
     {
@@ -67,5 +68,18 @@ public class CryptoHelper
         }
 
         return decryptedText; 
+    }
+
+    public static async Task<string> RandomBase64Async()
+    {
+        return await Task.Run(() =>
+        {
+            var randomBytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes);
+        });
     }
 }

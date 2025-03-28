@@ -2,21 +2,52 @@ using System.Text.Json;
 
 namespace server.Logging;
 
-public class LogFile
+public static class LogFile
 {
-    private static readonly string DirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"/OpenCafe/";
-    private static readonly string LogFilePath = DirectoryPath + "/log.json";
+    private static readonly string DirectoryPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+        "OpenCafe");
     
-    public static async Task<string> Locate()
+    private static readonly string LogFilePath = Path.Combine(DirectoryPath, "log.json");
+    
+    public static async Task<string> LocateAsync()
     {
-        if (File.Exists(LogFilePath)) return LogFilePath;
-        await Create();
-        return LogFilePath;
+        try
+        {
+            if (File.Exists(LogFilePath)) return LogFilePath;
+            await CreateAsync();
+            return LogFilePath;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to locate log file: {ex.Message}");
+            throw;
+        }
     }
     
-    private static async Task Create()
+    private static async Task CreateAsync()
     {
-        Log log = new Log("Notification", "Logfile created", "server.Logging.LogFile.Create()", DateTime.Now);
-        await File.WriteAllTextAsync(LogFilePath, $"[{JsonSerializer.Serialize(log)}]");
+        try
+        {
+            Directory.CreateDirectory(DirectoryPath);
+            var log = new Log(
+                type: "Info",
+                message: "Logfile created",
+                where: "server.Logging.LogFile.CreateAsync()",
+                date: DateTime.Now);
+                
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            
+            await File.WriteAllTextAsync(LogFilePath, $"[{JsonSerializer.Serialize(log, options)}]");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create log file: {ex.Message}");
+            throw;
+        }
     }
 }

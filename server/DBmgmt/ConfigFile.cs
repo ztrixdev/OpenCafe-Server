@@ -24,9 +24,10 @@ class ConfigFile
         {
             var json = await File.ReadAllTextAsync(ConfigFilePath);
             json = await CryptoHelper.DecryptAsync(json, key, iv);
-            
-            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            return await JsonSerializer.DeserializeAsync<DBConfig>(stream); 
+            var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+            var cfg = await JsonSerializer.DeserializeAsync<DBConfig>(ms); 
+            await ms.DisposeAsync();
+            return cfg;
         }
 
         if (!Directory.Exists(DirectoryPath))
@@ -41,15 +42,19 @@ class ConfigFile
     }
 
     private static async Task<string> New(DBConfig dbConfig, string key, string iv)
-    {   
+    {
         using (var ms = new MemoryStream())
         {
             await JsonSerializer.SerializeAsync(ms, dbConfig);
             ms.Seek(0, SeekOrigin.Begin);
-            var serializedContent = System.Text.Encoding.UTF8.GetString(ms.ToArray());
-            serializedContent = await CryptoHelper.EncryptAsync(serializedContent, key, iv);
-            await File.WriteAllTextAsync(ConfigFilePath, serializedContent);
+            
+            using (var reader = new StreamReader(ms, System.Text.Encoding.UTF8))
+            {
+                var serializedContent = await reader.ReadToEndAsync(); 
+                serializedContent = await CryptoHelper.EncryptAsync(serializedContent, key, iv);
+                await File.WriteAllTextAsync(ConfigFilePath, serializedContent);
+                return await File.ReadAllTextAsync(ConfigFilePath);
+            }
         }
-        return await File.ReadAllTextAsync(ConfigFilePath);
     }
 }

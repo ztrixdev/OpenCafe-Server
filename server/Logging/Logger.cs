@@ -6,7 +6,7 @@ public class Logger
 {
     public async Task New(Log log)
     {
-        var path = await LogFile.Locate();
+        var path = await LogFile.LocateAsync();
         var json = await File.ReadAllTextAsync(path);
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
 

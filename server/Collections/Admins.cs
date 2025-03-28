@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace server.Collections;
 
 public class Admin
@@ -16,12 +18,17 @@ public class Admin
 
 public class Admins
 {
-    public async Task<string> GenToken()
+    public async Task<string> GenTokenAsync()
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}<>,./~";
-        var random = new Random();
+        var TokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}<>,./~";
+        var TokenLength = 48;
         return await Task.Run(() =>
-            new string(Enumerable.Repeat(chars, 48)
-                .Select(s => s[random.Next(s.Length)]).ToArray()));
+        {
+            using var rng = RandomNumberGenerator.Create();
+            var randomBytes = new byte[TokenLength];
+            rng.GetBytes(randomBytes);
+            
+            return new string(randomBytes.Select(b => TokenChars[b % TokenChars.Length]).ToArray());
+        });
     }
 }

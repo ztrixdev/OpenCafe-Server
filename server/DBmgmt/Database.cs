@@ -1,7 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using server.Logging;
-using System.Linq;
 using server.Collections;
 using server.Helpers;
 
@@ -9,21 +8,22 @@ namespace server.DBmgmt;
 
 public class Database
 {
-    private string connectionString;
-    private MongoClient client;
-    private IMongoDatabase _database;
+    private readonly string connectionString;
+    private readonly MongoClient client;
+    public IMongoDatabase _database;
+    private readonly Dictionary<string, Dictionary<string, string>> collectionEncryption;
 
     public Database(DBConfig config)
     {
         connectionString = ConnectionString.Create(config);
         client = new MongoClient(connectionString);
         _database = client.GetDatabase(config.Name);
+        collectionEncryption = config.CollectionEncryption;
     }
     
     public async Task<BsonDocument> RunCommand(BsonDocument command)
     {
-        var result = await _database.RunCommandAsync<BsonDocument>(command);
-        return result;
+        return await _database.RunCommandAsync<BsonDocument>(command);
     }
     
     public async Task<bool> CheckConnection()
@@ -37,14 +37,14 @@ public class Database
         {
             var logger = new Logger();
             await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
-            Console.WriteLine("Unable to authenticate, re-enter your credentials.");
+            await Console.Out.WriteLineAsync("Unable to authenticate, re-enter your credentials.");
             return false;
         }
         catch (MongoConfigurationException exception)
         {
             var logger = new Logger();
             await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
-            Console.WriteLine("THe connection string is invalid.");
+            await Console.Out.WriteLineAsync("The connection string is invalid.");
             return false;
         }
     }
@@ -57,15 +57,15 @@ public class Database
             { "dishes", false }, { "images", false }
         };
         
-        var collectionNames = await _database.ListCollectionNamesAsync().Result.ToListAsync<string>();
-        foreach (string name in collectionNames)
+        var collectionNames = await _database.ListCollectionNames().ToListAsync();
+        foreach (var name in collectionNames)
         {
             if (areCollectionsPresent.ContainsKey(name))
             {
                 areCollectionsPresent[name] = true;
             }
         }
-
+        
         foreach (KeyValuePair<string, bool> kvp in areCollectionsPresent)
         {
             if (kvp.Value == false)
@@ -79,27 +79,40 @@ public class Database
 
     public async Task InitCollections()
     {
-        var key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
-        var iv = Environment.GetEnvironmentVariable("ENCRYPTION_IV");
+        var logger = new Logger();
+        await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()", date: DateTime.Now));
         
+        var key = collectionEncryption["admins"]["key"];
+        var iv = collectionEncryption["admins"]["iv"];
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
         {
-            Console.Error.WriteLine("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
+            Console.ForegroundColor = ConsoleColor.Red;
+
+            var log = new Log(type: "Error",
+                message: "Check or regenerate your db.cfg as it doesn't contain correct collection encryption credentials!",
+                where: "Database::InitCollections()", 
+                date: DateTime.Now);
+            await logger.New(log);
+            await Console.Error.WriteLineAsync(log.Message);
             Environment.Exit(1);
             return;
         }
 
-        await _database.CreateCollectionAsync("customers");
+        await _database.CreateCollectionAsync("customers"); 
         await _database.CreateCollectionAsync("admins");
         await _database.CreateCollectionAsync("dishes");
         await _database.CreateCollectionAsync("images");
         
-        var firstHeadToken = await new Admins().GenToken();
-        Console.WriteLine("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
-        await File.WriteAllTextAsync(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"/OpenCafe/firsthead_token.txt", firstHeadToken);
+        var firstHeadToken = await new Admins().GenTokenAsync();
+        await Console.Out.WriteLineAsync("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
+        
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var directoryPath = Path.Combine(appDataPath, "OpenCafe");
+        Directory.CreateDirectory(directoryPath); // Ensure directory exists
+        await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt"), firstHeadToken);
         
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
         var adminCollection = _database.GetCollection<BsonDocument>("admins");
-        await adminCollection.InsertOneAsync(new Admin(name: "FIRSTADMIN", role: "head",  token: firstHeadToken).ToBsonDocument());
+        await adminCollection.InsertOneAsync(new Admin(name: "FIRSTADMIN", role: "head", token: firstHeadToken).ToBsonDocument());
     }
 }
