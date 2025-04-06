@@ -1,7 +1,9 @@
 using System.Text.Json;
 
 namespace server.Logging;
-
+/// <summary>
+/// LogFile class. 
+/// </summary>
 public static class LogFile
 {
     private static readonly string DirectoryPath = Path.Combine(
@@ -33,8 +35,7 @@ public static class LogFile
             var log = new Log(
                 type: "Info",
                 message: "Logfile created",
-                where: "server.Logging.LogFile.CreateAsync()",
-                date: DateTime.Now);
+                where: "server.Logging.LogFile.CreateAsync()");
                 
             var options = new JsonSerializerOptions
             {

@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace server.DBmgmt;
 
+/// <summary>
+/// DBConfig class. Contains database and data encryption credentials.
+/// </summary>
 public class DBConfig
 {
     public string? Host { get; set; }
@@ -16,24 +19,28 @@ public class DBConfig
     public string? Password { get; set; }
     public string? AuthSource { get; set; }
 
-    public Dictionary<string, Dictionary<string, string>> CollectionEncryption { get; set; }
+    public Dictionary<string, Dictionary<string, string>>? CollectionEncryption { get; set; }
     
-    public static async Task<DBConfig> Init()
+    /// <summary>
+    /// Initializes a new DBConfig with user-typed settings.
+    /// </summary>
+    /// <returns>A new DBConfig</returns>
+    public static DBConfig Init()
     {
         var configMethod = 0;
         while (configMethod != 1 && configMethod != 2)
         {
-            await Console.Out.WriteLineAsync(@"We need to make a database configuration file!
+            Console.WriteLine(@"We need to make a database configuration file!
         1. Enter credentials manually (Username, password, hostname, etc.).
         2. Enter a connection string.");
             try
             {
-                var input = await Console.In.ReadLineAsync();
+                var input = Console.ReadLine();
                 configMethod = Convert.ToInt32(input);
             }
             catch (FormatException)
             {
-                await Console.Error.WriteLineAsync("Please enter a valid integer!");
+                Console.Error.WriteLine("Please enter a valid integer!");
             }
         }
 
@@ -45,49 +52,47 @@ public class DBConfig
         {
             if (configMethod == 1)
             {
-                await Console.Out.WriteLineAsync("Enter DB hostname (format: mydomainname.org): ");
-                dbConfig.Host = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter DB hostname (format: mydomainname.org): ");
+                dbConfig.Host = Console.ReadLine();
                 
-                await Console.Out.WriteLineAsync("Enter DB port: ");
-                var portInput = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter DB port: ");
+                var portInput = Console.ReadLine();
                 dbConfig.Port = Convert.ToInt32(portInput);
                 
-                await Console.Out.WriteLineAsync("Enter default database to use: ");
-                dbConfig.Name = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter default database to use: ");
+                dbConfig.Name = Console.ReadLine();
                 
-                await Console.Out.WriteLineAsync("Enter DB username: ");
-                dbConfig.User = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter DB username: ");
+                dbConfig.User = Console.ReadLine();
                 
-                await Console.Out.WriteLineAsync("Enter DB password: ");
-                dbConfig.Password = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter DB password: ");
+                dbConfig.Password = Console.ReadLine();
                 
-                await Console.Out.WriteLineAsync("Enter DB AuthSource: ");
-                dbConfig.AuthSource = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter DB AuthSource: ");
+                dbConfig.AuthSource = Console.ReadLine();
                 
                 var database = new Database(dbConfig);
-                isConnectionSuccessful = await database.CheckConnection();
+                isConnectionSuccessful = database.CheckConnection().Result;
                 attempts++;
             }
             else
             {
-                await Console.Out.WriteLineAsync("Enter your connection string: ");
-                var connectionString = await Console.In.ReadLineAsync();
+                Console.WriteLine("Enter your connection string: ");
+                var connectionString = Console.ReadLine();
                 
                 if (connectionString != null)
                 {
                     try
                     {
-                        dbConfig = await ConnectionString.ReadAsync(connectionString);
+                        dbConfig = ConnectionString.Read(connectionString);
                     }
                     catch (MongoConfigurationException exception)
                     {
-                        await Console.Error.WriteLineAsync("Provided string is not a valid connection string!");
+                        Console.Error.WriteLine("Provided string is not a valid connection string!");
+                        
                         var logger = new Logger();
-                        await logger.New(new Log(
-                            type: "Error", 
-                            message: exception.Message, 
-                            where: exception.Source, 
-                            date: DateTime.Now));
+                        Task.Run(() => logger.LogException(exception));
+                        
                         isConnectionSuccessful = false;
                         attempts++;
                         continue;
@@ -95,33 +100,33 @@ public class DBConfig
                 }
                 
                 var database = new Database(dbConfig);
-                isConnectionSuccessful = await database.CheckConnection();
+                isConnectionSuccessful = database.CheckConnection().Result;
                 attempts++;
             }
         }
 
         if (attempts >= 5)
         {
-            await Console.Error.WriteLineAsync("Configuration failed. Try again!");
+            Console.Error.WriteLine("Configuration failed. Try again!");
             Environment.Exit(0);
         }
         
-        await Console.Out.WriteLineAsync("Creating collection encryption keys and ivs...");
+        Console.WriteLine("Creating collection encryption keys and ivs...");
         dbConfig.CollectionEncryption = new Dictionary<string, Dictionary<string, string>>()
         {
             { "admins", new Dictionary<string, string>{
-                {"key", await CryptoHelper.RandomBase64Async()}, 
-                {"iv", await CryptoHelper.RandomBase64Async()}} 
+                {"key", CryptoHelper.RandomBase64Async().Result}, 
+                {"iv", CryptoHelper.RandomBase64Async().Result}} 
             },
             { "customers", new Dictionary<string, string>{
-                {"key", await CryptoHelper.RandomBase64Async()}, 
-                {"iv", await CryptoHelper.RandomBase64Async()}} 
+                {"key", CryptoHelper.RandomBase64Async().Result}, 
+                {"iv", CryptoHelper.RandomBase64Async().Result}} 
             }
         };
         
         if (isConnectionSuccessful)
         {
-            await Console.Out.WriteLineAsync("Database connection successful! Creating a config file...");
+            Console.WriteLine("Database connection successful! Creating a config file...");
         }
         
         return dbConfig;

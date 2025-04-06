@@ -3,8 +3,15 @@ using server.Logging;
 
 namespace server;
 
+/// <summary>
+/// DBService class. 
+/// </summary>
 public class DBService
 {
+    /// <summary>
+    /// Starts the connection and validates everything.
+    /// </summary>
+    /// <returns>A new Database object</returns>
     public async Task<Database> Start()
     {
         Console.ForegroundColor = ConsoleColor.DarkBlue;
@@ -17,14 +24,19 @@ public class DBService
         }
 
         Console.ForegroundColor = ConsoleColor.Green;
-        var configFile = await ConfigFile.Read();
+        var configFile = ConfigFile.Read();
         var ndb = new Database(configFile);
 
-        // Check database connection asynchronously
-        Console.WriteLine("Is connection successful: " + await ndb.CheckConnection());
-        Console.WriteLine("Is OpenCafe: " + await ndb.CheckForOpenCafe());
+        var isCon200 = await ndb.CheckConnection();
+        Console.WriteLine("Is connection successful: " + isCon200);
+        if (!isCon200)
+        {
+            Environment.Exit(1);
+        }
+        
+        Console.WriteLine("Is OpenCafe: " + ndb.CheckForOpenCafe());
 
-        if (!await ndb.CheckForOpenCafe())
+        if (!ndb.CheckForOpenCafe())
         {
             Console.Write("Should I initialize collections? [Y/n]: ");
             var initColOrNot = await Console.In.ReadLineAsync(); 
@@ -44,8 +56,7 @@ public class DBService
             var log = new Log(
                 type: "Error",
                 message: "Collection encryption not specified. Unable to proceed, delete the old configuration file and restart the process.",
-                where: "DBService::Start()",
-                date: DateTime.Now
+                where: "DBService::Start()"
             );
             await logger.New(log); 
             await Console.Error.WriteLineAsync(log.Message); 
@@ -67,8 +78,7 @@ public class DBService
                     var log = new Log(
                         type: "Error",
                         message: "Some of the keys/ivs are not valid! Unable to proceed, delete the old configuration file and restart the process.",
-                        where: "DBService::Start()",
-                        date: DateTime.Now
+                        where: "DBService::Start()"
                     );
                     await logger.New(log); 
                     await Console.Error.WriteLineAsync(log.Message); 
@@ -79,6 +89,6 @@ public class DBService
         Console.WriteLine("Keys are OK!");
         Console.WriteLine("Service started!");
         
-        return ndb; // Return the initialized database object
+        return ndb;
     }
 }

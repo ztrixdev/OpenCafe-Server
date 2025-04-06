@@ -3,30 +3,40 @@ using server.Helpers;
 
 namespace server.DBmgmt;
 
+/// <summary>
+/// Config file class. Implements methods for reading the file and creating a new one. 
+/// </summary>
 class ConfigFile
 {
     private static readonly string DirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"/OpenCafe/";
     private static readonly string ConfigFilePath = DirectoryPath + "db.cfg";
     
-    public static async Task<DBConfig> Read()
+    /// <summary>
+    /// Decrypts and reads the JSON data from the ConfigFile.
+    /// </summary>
+    /// <returns>A new DBConfig</returns>
+    /// <exception cref="ArgumentNullException">Threw if db.cfg is null</exception>
+    public static DBConfig Read()
     {
         var key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
         var iv = Environment.GetEnvironmentVariable("ENCRYPTION_IV");
 
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
         {
-            await Console.Error.WriteLineAsync("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
+            Console.Error.WriteLine("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
             Environment.Exit(1);
             return null;
         }
 
         if (File.Exists(ConfigFilePath))
         {
-            var json = await File.ReadAllTextAsync(ConfigFilePath);
-            json = await CryptoHelper.DecryptAsync(json, key, iv);
-            var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            var cfg = await JsonSerializer.DeserializeAsync<DBConfig>(ms); 
-            await ms.DisposeAsync();
+            var json = File.ReadAllText(ConfigFilePath);
+            json = CryptoHelper.DecryptAsync(json, key, iv).Result;
+            var cfg = JsonSerializer.Deserialize<DBConfig>(json);
+            if (cfg == null)
+            {
+                throw new ArgumentNullException("cfg");
+            }
             return cfg;
         }
 
@@ -35,26 +45,26 @@ class ConfigFile
             Directory.CreateDirectory(DirectoryPath);
         }
 
-        var init = await DBConfig.Init();
-        var encryptedInit = await CryptoHelper.DecryptAsync(await New(init, key, iv), key, iv); 
+        var init = DBConfig.Init();
+        var encryptedInit = CryptoHelper.DecryptAsync(New(init, key, iv), key, iv).Result; 
         
-        return await Task.FromResult(JsonSerializer.Deserialize<DBConfig>(encryptedInit)); 
+        return JsonSerializer.Deserialize<DBConfig>(encryptedInit); 
     }
 
-    private static async Task<string> New(DBConfig dbConfig, string key, string iv)
+    /// <summary>
+    /// Creates a new config file inside the $SpecialFolder.ApplicationData/OpenCafe/ folder named db.cfg.
+    /// The file stores encrypted configuration JSON.
+    /// Key and IV are usually stored in the environment variables but can be replaced with any 16-bit Base64 strings.
+    /// </summary>
+    /// <param name="dbConfig"></param>
+    /// <param name="key">env variable ENCRYPTION_KEY</param>
+    /// <param name="iv">env variable ENCRYPTION_IV</param>
+    /// <returns>string - contents of the new db.cfg file</returns>
+    private static string New(DBConfig dbConfig, string key, string iv)
     {
-        using (var ms = new MemoryStream())
-        {
-            await JsonSerializer.SerializeAsync(ms, dbConfig);
-            ms.Seek(0, SeekOrigin.Begin);
-            
-            using (var reader = new StreamReader(ms, System.Text.Encoding.UTF8))
-            {
-                var serializedContent = await reader.ReadToEndAsync(); 
-                serializedContent = await CryptoHelper.EncryptAsync(serializedContent, key, iv);
-                await File.WriteAllTextAsync(ConfigFilePath, serializedContent);
-                return await File.ReadAllTextAsync(ConfigFilePath);
-            }
-        }
+        var json = JsonSerializer.Serialize(dbConfig);
+        var encryptedCfg = CryptoHelper.EncryptAsync(json, key, iv).Result;
+        File.WriteAllText(ConfigFilePath, encryptedCfg);
+        return File.ReadAllText(ConfigFilePath);
     }
 }

@@ -1,4 +1,13 @@
 using server;
-// test mirroring
+
+Console.WriteLine("Echo DBConfig? [Y/n]");
+var ans = Console.ReadLine().ToUpper();
+if (ans == "Y")
+{
+    new Utils().EchoConfig();
+}
+
 var service = new DBService();
-var db = await service.Start();
+await service.Start();
+
+

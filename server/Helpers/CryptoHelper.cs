@@ -3,8 +3,19 @@ using System.Threading.Tasks;
 
 namespace server.Helpers;
 
+/// <summary>
+/// Cryptography helper class. 
+/// </summary>
 public static class CryptoHelper
 {
+    /// <summary>
+    /// Converts a plain string into a base64 encrypted string.
+    /// </summary>
+    /// <param name="plainText"></param>
+    /// <param name="key"></param>
+    /// <param name="iv"></param>
+    /// <returns>Encrypted base64 string</returns>
+    /// <exception cref="ArgumentException">Refer to the message for info</exception>
     public static async Task<string> EncryptAsync(string plainText, string key, string iv)
     {
         if (string.IsNullOrEmpty(plainText))
@@ -37,6 +48,14 @@ public static class CryptoHelper
         return Convert.ToBase64String(encryptedBytes); 
     }
     
+    /// <summary>
+    /// Converts a base64 encrypted string into plain text
+    /// </summary>
+    /// <param name="cipherText"></param>
+    /// <param name="key"></param>
+    /// <param name="iv"></param>
+    /// <returns>Decrypted string</returns>
+    /// <exception cref="ArgumentException">Refer to the message for info</exception>
     public static async Task<string> DecryptAsync(string cipherText, string key, string iv)
     {
         if (string.IsNullOrEmpty(cipherText))
@@ -69,7 +88,7 @@ public static class CryptoHelper
 
         return decryptedText; 
     }
-
+    
     public static async Task<string> RandomBase64Async()
     {
         return await Task.Run(() =>

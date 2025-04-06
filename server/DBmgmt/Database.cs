@@ -21,13 +21,23 @@ public class Database
         collectionEncryption = config.CollectionEncryption;
     }
     
+    /// <summary>
+    /// Runs a MongoDB command
+    /// </summary>
+    /// <param name="command">a valid mongo command</param>
+    /// <returns>The result of the executed command</returns>
     public async Task<BsonDocument> RunCommand(BsonDocument command)
     {
         return await _database.RunCommandAsync<BsonDocument>(command);
     }
     
+    /// <summary>
+    /// Checks the connection to the remote database.
+    /// </summary>
+    /// <returns>true if connection is successful, false if not.</returns>
     public async Task<bool> CheckConnection()
     {
+        var logger = new Logger();
         try
         {
             await RunCommand(new BsonDocument("ping", 1));
@@ -35,21 +45,29 @@ public class Database
         }
         catch (MongoAuthenticationException exception)
         {
-            var logger = new Logger();
-            await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            await logger.LogException(exception);
             await Console.Out.WriteLineAsync("Unable to authenticate, re-enter your credentials.");
             return false;
         }
         catch (MongoConfigurationException exception)
         {
-            var logger = new Logger();
-            await logger.New(new Log(type: "Error", message: exception.Message, where: exception.Source, DateTime.Now));
+            await logger.LogException(exception);
             await Console.Out.WriteLineAsync("The connection string is invalid.");
+            return false;
+        }
+        catch (TimeoutException exception)
+        {
+            await logger.LogException(exception);
+            await Console.Out.WriteLineAsync("A timeout has occurred.");
             return false;
         }
     }
 
-    public async Task<bool> CheckForOpenCafe()
+    /// <summary>
+    /// Checks if the Database matches the OpenCafe template.
+    /// </summary>
+    /// <returns>true if it does, false if not.</returns>
+    public bool CheckForOpenCafe()
     {
         var areCollectionsPresent = new Dictionary<string, bool>()
         {
@@ -57,7 +75,7 @@ public class Database
             { "dishes", false }, { "images", false }
         };
         
-        var collectionNames = await _database.ListCollectionNames().ToListAsync();
+        var collectionNames = _database.ListCollectionNames().ToList();
         foreach (var name in collectionNames)
         {
             if (areCollectionsPresent.ContainsKey(name))
@@ -77,10 +95,13 @@ public class Database
         return true;
     }
 
+    /// <summary>
+    /// Initializes new collections in a non-OpenCafe database. 
+    /// </summary>
     public async Task InitCollections()
     {
         var logger = new Logger();
-        await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()", date: DateTime.Now));
+        await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()" ));
         
         var key = collectionEncryption["admins"]["key"];
         var iv = collectionEncryption["admins"]["iv"];
@@ -90,8 +111,7 @@ public class Database
 
             var log = new Log(type: "Error",
                 message: "Check or regenerate your db.cfg as it doesn't contain correct collection encryption credentials!",
-                where: "Database::InitCollections()", 
-                date: DateTime.Now);
+                where: "Database::InitCollections()");
             await logger.New(log);
             await Console.Error.WriteLineAsync(log.Message);
             Environment.Exit(1);
