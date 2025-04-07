@@ -12,7 +12,7 @@ public class Database
     private readonly string connectionString;
     private readonly MongoClient client;
     public IMongoDatabase _database;
-    private readonly Dictionary<string, Dictionary<string, string>> collectionEncryption;
+    public readonly Dictionary<string, Dictionary<string, string>> collectionEncryption;
 
     public Database(DBConfig config)
     {
