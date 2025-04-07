@@ -1,4 +1,4 @@
-## OpenCafe infdev 0.1.1SA
+## OpenCafe infdev 0.1.2SA
 The goal is to create an open-source platform for small cafe and restaurant startups.  
 Instead of relying on proprietary software, a startup can configure OpenCafe for their needs,  
 all you need is a web-server and a bit of effort. You can dynamically modify what you offer at the moment, 
