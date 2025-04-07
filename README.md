@@ -11,8 +11,8 @@ keep track of your customers and their orders that they make from the mobile app
 
 ### Projects TODO:
 <ul>
-<li>AP - the AvaloniaUI-based admin panel to control your OpenCafe instance</li>
-<li>OCM - OpenCafe Mobile, the app for customers to make orders, view the menu etc.</li>
+<li>AP - the WebApp for admins to control your OpenCafe instance</li>
+<li>OCM - OpenCafe Mobile, the WebApp for customers to make orders, view the menu etc.</li>
 </ul>
 
 ### Contribute
