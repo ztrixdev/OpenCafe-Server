@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using server.DBmgmt;
 using server.Logging;
 
@@ -44,23 +45,18 @@ public class DBService
             {
                 await ndb.InitCollections(); 
             }
-
-            Environment.Exit(0);
+            Console.WriteLine("Can't continue. Exiting...");
+            Environment.Exit(1);
         }
 
         Console.WriteLine("Reading keys...");
         if (configFile.CollectionEncryption == null)
         {
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            var logger = new Logger();
-            var log = new Log(
-                type: "Error",
-                message: "Collection encryption not specified. Unable to proceed, delete the old configuration file and restart the process.",
-                where: "DBService::Start()"
-            );
-            await logger.New(log); 
-            await Console.Error.WriteLineAsync(log.Message); 
-            Environment.Exit(0);
+            var e = new AuthenticationException(
+                "Collection encryption not specified. Unable to proceed, delete the old configuration file and restart the process.");
+            await new Logger().LogException(e);
+            throw e;
         }
 
         foreach (var val in configFile.CollectionEncryption.Values)
@@ -74,14 +70,9 @@ public class DBService
                 catch (FormatException)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
-                    var logger = new Logger();
-                    var log = new Log(
-                        type: "Error",
-                        message: "Some of the keys/ivs are not valid! Unable to proceed, delete the old configuration file and restart the process.",
-                        where: "DBService::Start()"
-                    );
-                    await logger.New(log); 
-                    await Console.Error.WriteLineAsync(log.Message); 
+                    var e = new InvalidCredentialException(
+                        "Some of the keys/ivs are not valid! Unable to proceed, delete the old configuration file and restart the process.");
+                    await new Logger().LogException(e);
                 }
             }
         }

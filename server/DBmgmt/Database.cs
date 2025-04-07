@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using server.Logging;
@@ -108,14 +109,10 @@ public class Database
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-
-            var log = new Log(type: "Error",
-                message: "Check or regenerate your db.cfg as it doesn't contain correct collection encryption credentials!",
-                where: "Database::InitCollections()");
-            await logger.New(log);
-            await Console.Error.WriteLineAsync(log.Message);
-            Environment.Exit(1);
-            return;
+            var e = new InvalidCredentialException(
+                "Check your config file as it doesn't contain collection encryption credentials. Regenerate it and try again.");
+            await logger.LogException(e);
+            throw e;
         }
 
         await _database.CreateCollectionAsync("customers"); 
@@ -130,7 +127,9 @@ public class Database
         var directoryPath = Path.Combine(appDataPath, "OpenCafe");
         Directory.CreateDirectory(directoryPath); // Ensure directory exists
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt"), firstHeadToken);
-        
+        // Creates duplicates of firsthead_token.txt
+        await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.1.bckp"), firstHeadToken);
+        await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
         var adminCollection = _database.GetCollection<BsonDocument>("admins");
         await adminCollection.InsertOneAsync(new Admin(name: "FIRSTADMIN", role: "head", token: firstHeadToken).ToBsonDocument());

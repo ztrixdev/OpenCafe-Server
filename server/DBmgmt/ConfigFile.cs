@@ -1,5 +1,7 @@
+using System.Security.Authentication;
 using System.Text.Json;
 using server.Helpers;
+using server.Logging;
 
 namespace server.DBmgmt;
 
@@ -23,20 +25,28 @@ class ConfigFile
 
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
         {
-            Console.Error.WriteLine("Ensure you have AES-based ENCRYPTION_KEY and ENCRYPTION_IV in your environment variables!");
-            Environment.Exit(1);
-            return null;
+            throw new AuthenticationException("Missing environment variable: ENCRYPTION_KEY or ENCRYPTION_IV");
         }
 
         if (File.Exists(ConfigFilePath))
         {
             var json = File.ReadAllText(ConfigFilePath);
-            json = CryptoHelper.DecryptAsync(json, key, iv).Result;
+            try
+            {
+                json = CryptoHelper.DecryptAsync(json, key, iv).Result;
+            }
+            catch (AggregateException exception)
+            { 
+                Task.Run(() => new Logger().LogException(exception));
+                throw new FormatException("The config file is corrupted. Please replace it with one of the backups or generate a new one.");
+            }
             var cfg = JsonSerializer.Deserialize<DBConfig>(json);
             if (cfg == null)
             {
+                // If there is no config in the config file... How?
                 throw new ArgumentNullException("cfg");
             }
+
             return cfg;
         }
 
@@ -64,7 +74,11 @@ class ConfigFile
     {
         var json = JsonSerializer.Serialize(dbConfig);
         var encryptedCfg = CryptoHelper.EncryptAsync(json, key, iv).Result;
+        // Creates the main db.cfg
         File.WriteAllText(ConfigFilePath, encryptedCfg);
+        // Creates duplicates (db.cfg.1.bckp, db.cfg.2.bckp)
+        File.WriteAllText(ConfigFilePath + ".1.bckp", encryptedCfg);
+        File.WriteAllText(ConfigFilePath + ".2.bckp", encryptedCfg);
         return File.ReadAllText(ConfigFilePath);
     }
 }

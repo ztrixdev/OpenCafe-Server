@@ -25,11 +25,7 @@ public class Logger
             }
             catch (JsonException exception)
             {
-                await Console.Error.WriteLineAsync(
-                    "Can't deserialize the log file (not a valid JSON)! Check if it's valid or remove it." +
-                    Environment.NewLine);
-                await Console.Error.WriteLineAsync("Log file path: " + path + "Exception message: " +
-                                                   exception.Message);
+                throw new JsonException($"Failed to parse log file: {path}", exception);
             }
         }
     }
