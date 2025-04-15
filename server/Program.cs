@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.Data;
 using server;
 using server.Collections;
 
@@ -17,11 +18,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.MapGet("/", () => "Wilkommen auf OpenCafe!");
+
 app.MapPost("/api/admin/login", 
-    async (Admins.LoginRequest req) => await Admins.Login(token: req.Token, database: db));
+    async (Admins.LoginRequest req) => await Admins.Login(req: req, database: db));
 
 app.MapPost("/api/admin/register", 
-    async (Admins.RegisterRequest req) => await Admins.Register(token: req.Token, database: db, name: req.Name));
+    async (Admins.RegisterRequest req) => await Admins.Register(req: req, database: db));
+
+app.MapPut("/api/admin/changename", 
+    async (Admins.ChangeNameRequest req) => await Admins.ChangeName(req: req, database: db));
+
+app.MapPost("/api/admin/delete",
+    async (Admins.DeleteRequest req) => await Admins.Delete(req: req, database: db));
+
+app.MapPost("/api/admin/getAll", 
+    async (Admins.GetAllRequest req) => await Admins.GetAll(req: req, database: db));
 
 app.Run();
 

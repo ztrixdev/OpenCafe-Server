@@ -9,6 +9,8 @@ namespace server;
 /// </summary>
 public class DBService
 {
+
+
     /// <summary>
     /// Starts the connection and validates everything.
     /// </summary>
