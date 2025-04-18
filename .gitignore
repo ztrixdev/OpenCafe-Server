@@ -62,4 +62,6 @@ nunit-*.xml
 */bin/
 */obj/
 
-VeraCryptKeys.json
+panel/
+.vscode/
+

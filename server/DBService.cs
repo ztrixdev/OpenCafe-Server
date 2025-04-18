@@ -80,6 +80,9 @@ public class DBService
         }
 
         Console.WriteLine("Keys are OK!");
+        Console.WriteLine("Creating directories...");
+        Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OpenCafe/fs"));
+        Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OpenCafe/fs/img"));
         Console.WriteLine("Service started!");
         
         return ndb;
