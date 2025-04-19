@@ -1,11 +1,8 @@
 using System.Security.Cryptography;
 using MongoDB.Driver;
 using server.DBmgmt;
-using System.Net.Http;
 using MongoDB.Bson;
 using server.Helpers;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
 
 namespace server.Collections;
 
@@ -69,7 +66,7 @@ public class Admins
     /// <returns>Look up bro</returns>
     public async Task<string> GenTokenAsync()
     {
-        var tokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}<>,./~";
+        var tokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789–_.~";
         var tokenLength = 48;
         return await Task.Run(() =>
         {
@@ -117,7 +114,7 @@ public class Admins
     public static async Task<IResult> Register(RegisterRequest req, Database database)
     {
         if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.Name))
-            return Results.BadRequest();
+            return Results.BadRequest("One or more of the request fields is not specified!");
         
         var encryptedToken = await CryptoHelper.EncryptAsync(req.Token, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
         
@@ -150,7 +147,7 @@ public class Admins
     public static async Task<IResult> ChangeName(ChangeNameRequest req, Database database)
     {
         if (string.IsNullOrWhiteSpace(req.Token1) || string.IsNullOrWhiteSpace(req.Token2) || string.IsNullOrWhiteSpace(req.Name))
-            return Results.BadRequest();
+            return Results.BadRequest("One or more of the request fields is not specified!");
 
         var adminCollection = database._database.GetCollection<Admin>("admins");
         
@@ -164,12 +161,11 @@ public class Admins
             await adminCollection.Find((Admin admin) => admin.Token == encryptedTokens[1]).FirstOrDefaultAsync()
         };
 
-        if (adminObjects.Any(x => x == null)) return Results.NotFound();
+        if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
         if (adminObjects[0].Token == adminObjects[1].Token|| adminObjects[0].Role == "head")
         {
             var filter = new BsonDocument("Token", adminObjects[1].Token);
-            Console.WriteLine(filter);
             var update = new BsonDocument("$set", new BsonDocument("Name", req.Name));
             var res = await adminCollection.UpdateOneAsync(filter, update);
             return Results.Ok(res);
@@ -192,7 +188,7 @@ public class Admins
     public static async Task<IResult> Delete(DeleteRequest req, Database database) 
     {
         if (string.IsNullOrWhiteSpace(req.Token1) || string.IsNullOrWhiteSpace(req.Token2))
-            return Results.BadRequest();
+            return Results.BadRequest("One or more of the request fields is not specified!");
 
         var adminCollection = database._database.GetCollection<Admin>("admins");
         
@@ -206,12 +202,12 @@ public class Admins
             await adminCollection.Find((Admin admin) => admin.Token == encryptedTokens[1]).FirstOrDefaultAsync()
         };
 
-        if (adminObjects.Any(x => x == null)) return Results.NotFound();
+        if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
         if (adminObjects[0].Role == "head")
         {  
             await adminCollection.DeleteOneAsync((Admin admin) => admin.Token == adminObjects[1].Token);
-            return Results.Ok();
+            return Results.Ok($"{adminObjects[1].Name} was deleted successfuly.");
         }
 
         return Results.Unauthorized();
@@ -219,7 +215,7 @@ public class Admins
 
     public static async Task<IResult> GetAll(GetAllRequest req, Database database) 
     {
-        if (string.IsNullOrEmpty(req.Token)) return Results.BadRequest();
+        if (string.IsNullOrEmpty(req.Token)) return Results.BadRequest("Specify a head token before requesting.");
         
         var adminCollection = database._database.GetCollection<Admin>("admins");
 
@@ -235,5 +231,4 @@ public class Admins
 
         return Results.Ok(adminObjects);
     }
-
 }

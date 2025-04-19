@@ -1,4 +1,7 @@
 using Microsoft.Extensions.FileProviders;
+using Microsoft.VisualBasic;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using server;
 using server.Collections;
 
@@ -31,25 +34,37 @@ var db = await dbs.Start();
 
 // Admin-related API requests.
 
-app.MapPost("/api/admin/login", 
-    async (Admins.LoginRequest req) => await Admins.Login(req: req, database: db));
+app.MapGet("/api/admin/login", 
+    async (HttpRequest request) => 
+    {
+        var req = new Admins.LoginRequest(request.Query["token"]);
+        return await Admins.Login(req, db);
+    });
 
 app.MapPut("/api/admin/register", 
-    async (Admins.RegisterRequest req) => await Admins.Register(req: req, database: db));
+    async (Admins.RegisterRequest req) => await Admins.Register(req, db));
 
 app.MapPut("/api/admin/changename", 
-    async (Admins.ChangeNameRequest req) => await Admins.ChangeName(req: req, database: db));
+    async (Admins.ChangeNameRequest req) => await Admins.ChangeName(req, db));
 
-app.MapPost("/api/admin/delete",
-    async (Admins.DeleteRequest req) => await Admins.Delete(req: req, database: db));
+app.MapDelete("/api/admin/delete", 
+    async (HttpRequest request) => 
+    {
+        var req = new Admins.DeleteRequest(request.Query["token1"], request.Query["token2"]);
+        return await Admins.Delete(req, db);
+    });
 
-app.MapPost("/api/admin/getAll", 
-    async (Admins.GetAllRequest req) => await Admins.GetAll(req: req, database: db));
+app.MapGet("/api/admin/getAll", 
+    async (HttpRequest request) =>
+    {
+        var req = new Admins.GetAllRequest(request.Query["token"]);
+        return await Admins.GetAll(req, db);
+    });
 
 // Image-related API requests.
 
 app.MapPut("/api/images/upload",
-async (HttpContext ctx) => 
+    async (HttpContext ctx) => 
     {
         if (ctx.Request.HasFormContentType)
         {
@@ -59,6 +74,19 @@ async (HttpContext ctx) =>
         }
         return Results.BadRequest();
     });
+
+app.MapDelete("/api/images/delete", 
+    async (HttpRequest request) => 
+    {
+        var req = new Images.DeleteRequest(ObjectId.Parse(request.Query["id"]), request.Query["token"]);
+        return await Images.Delete(req, db);
+    });
+
+app.MapGet("/api/images/getAll",
+     async () => { return await Images.GetAll(db); } );
+
+app.MapGet("/api/images/get", 
+    async (HttpRequest request) => { return await Images.GetOne(ObjectId.Parse(request.Query["id"]), db); });
 
 app.Run();
 
