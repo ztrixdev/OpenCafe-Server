@@ -61,7 +61,6 @@ nunit-*.xml
 
 */bin/
 */obj/
-
-panel/
 .vscode/
 
+.DS_Store

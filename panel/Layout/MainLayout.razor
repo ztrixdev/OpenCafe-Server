@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <article class="content mx-8 my-8">
+            @Body
+        </article>
+    </main>
+</div>
+
+@inject panel.Services.Localization Localization
+@inject panel.Services.Credentials Credentials
+@inject NavigationManager Navigation
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (string.IsNullOrWhiteSpace(Credentials._instance) || string.IsNullOrWhiteSpace(Credentials._token) || !await new panel.Helpers.Auth().Login(Credentials))
+            Navigation.NavigateTo("/login");
+    }
+}
+   
+    

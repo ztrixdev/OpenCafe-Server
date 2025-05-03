@@ -1,0 +1,96 @@
+﻿@using System.Globalization;
+@using Microsoft.Extensions.Localization
+@inject panel.Services.Localization Localization
+
+<div class="container-fluid p-0">
+    <div class="d-flex flex-column flex-shrink-0 p-3 bg-dark text-white" style="width: 280px; height: 100vh;">
+        <div class="d-flex align-items-center mb-4 border-bottom border-secondary pb-3">
+            <span class="fs-4 fw-bold text-primary">@Localization.Translate("Menu.Nav.BrandName")</span>
+        </div>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li>
+                <a href="/profile" class="nav-link text-white hover-bg-gray">
+                    <i class="bi bi-person-fill me-2"></i>
+                    @Localization.Translate("Menu.Nav.Link.Profile")
+                </a>
+            </li>
+            <li>
+                <a href="/menu" class="nav-link text-white hover-bg-gray">
+                    <i class="bi bi-menu-button-wide me-2"></i>
+                    @Localization.Translate("Menu.Nav.Link.Menu")
+                </a>
+            </li>
+            <li>
+                <a href="/orders" class="nav-link text-white hover-bg-gray">
+                    <i class="bi bi-cart3 me-2"></i>
+                    @Localization.Translate("Menu.Nav.Link.Orders")
+                </a>
+            </li>
+            @if (false) 
+            {
+                <li>
+                    <a href="/instance" class="nav-link text-white hover-bg-gray">
+                        <i class="bi bi-server me-2"></i>
+                        @Localization.Translate("Menu.Nav.Link.Instance")
+                    </a>
+                </li>
+                <li>
+                    <a href="/admins" class="nav-link text-white hover-bg-gray">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        @Localization.Translate("Menu.Nav.Link.Admins")
+                    </a>
+                </li>
+            }
+        </ul>
+    
+        <div class="dropdown mt-auto border-top border-secondary pt-3">
+            <label for="language" class="form-label small text-muted mb-2">@Localization.Translate("Sprache")</label>
+            <select id="language" @onchange="ChangeCulture" class="form-select bg-secondary text-white border-dark">
+                @switch (Localization.Translate("Culture.Current")) 
+                {
+                    case "ru":
+                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="en">🇨🇦 English</option>           
+                        <option value="de">🇦🇹 Deutsch</option>
+                        break;
+                    case "de":
+                        <option value="de">🇦🇹 Deutsch</option>
+                        <option value="en">🇨🇦 English</option>           
+                        <option value="ru">🇷🇺 Русский</option>
+                        break;
+                    case "en":
+                        <option value="en">🇨🇦 English</option>   
+                        <option value="de">🇦🇹 Deutsch</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                        break;
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .hover-bg-gray:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+    }
+</style>
+
+@code 
+{
+    public async Task ChangeCulture(ChangeEventArgs eventArgs) 
+    {
+        var selectedCulture = eventArgs.Value?.ToString();
+        if (!string.IsNullOrEmpty(selectedCulture))
+        {
+            await Localization.LoadTranslationsAsync(selectedCulture);
+            StateHasChanged();
+        }
+    }
+}
