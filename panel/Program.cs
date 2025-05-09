@@ -18,3 +18,4 @@ var localization = host.Services.GetRequiredService<Localization>();
 await localization.InitializeAsync();
 
 await host.RunAsync();
+

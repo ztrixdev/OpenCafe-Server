@@ -1,10 +1,4 @@
 @page "/login"
-@inject panel.Services.Localization Localization
-@inject panel.Services.Credentials Credentials
-@inject NavigationManager Navigation
-@inject IJSRuntime JsRuntime
-@using System.Net;
-
 
 <PageTitle>@Localization.Translate("Page.Login.PageTitle")</PageTitle>
 
@@ -27,6 +21,11 @@
     </div>
 </div>
 
+@inject panel.Services.Localization Localization
+@inject panel.Services.Credentials Credentials
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+
 @code 
 {
     public string instanceUrl;
@@ -47,13 +46,14 @@
         {
             await JsRuntime.InvokeVoidAsync("alert", Localization.Translate("Page.Login.Alert.InvalidURL").ToString());
         }
-        catch (WebException) 
+        catch (System.Net.WebException) 
         {
             await JsRuntime.InvokeVoidAsync("alert", Localization.Translate("Page.Login.Alert.NotOC").ToString());
         }
 
         if (loginAttempt == true) 
-            Navigation.NavigateTo("/");
+            // ts doesnt work anyway lmao
+            Navigation.NavigateTo("https://startpage.com/");
         else 
             await JsRuntime.InvokeVoidAsync("alert", Localization.Translate("Page.Login.Alert.LoginFailed").ToString());
     }

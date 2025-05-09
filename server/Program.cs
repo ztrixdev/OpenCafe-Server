@@ -5,6 +5,9 @@ using MongoDB.Driver;
 using server;
 using server.Collections;
 
+var dbs = new DBService();
+var db = await dbs.Start();
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -29,16 +32,14 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapGet("/", () => "Wilkommen auf OpenCafe!");
 
-var dbs = new DBService();
-var db = await dbs.Start();
-
 // Admin-related API requests.
 
 app.MapGet("/api/admin/login", 
     async (HttpRequest request) => 
     {
         var req = new Admins.LoginRequest(request.Query["token"]);
-        return await Admins.Login(req, db);
+        var res = await Admins.Login(req, db);
+        return res;
     });
 
 app.MapPut("/api/admin/register", 
