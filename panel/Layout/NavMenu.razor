@@ -1,6 +1,7 @@
 ﻿@using System.Globalization;
 @using Microsoft.Extensions.Localization
 @inject panel.Services.Localization Localization
+@inject panel.Services.AdminDetails AdminDetails
 
 <div class="container-fluid p-0">
     <div class="d-flex flex-column flex-shrink-0 p-3 bg-dark text-white" style="width: 280px; height: 100vh;">
@@ -26,7 +27,8 @@
                     @Localization.Translate("Menu.Nav.Link.Orders")
                 </a>
             </li>
-            @if (false) 
+            
+            @if (AdminDetails._role == "head") 
             {
                 <li>
                     <a href="/instance" class="nav-link text-white hover-bg-gray">
@@ -42,7 +44,7 @@
                 </li>
             }
         </ul>
-    
+        
         <div class="dropdown mt-auto border-top border-secondary pt-3">
             <label for="language" class="form-label small text-muted mb-2">@Localization.Translate("Sprache")</label>
             <select id="language" @onchange="ChangeCulture" class="form-select bg-secondary text-white border-dark">
@@ -69,8 +71,6 @@
     </div>
 </div>
 
-
-
 <style>
     .hover-bg-gray:hover {
         background-color: rgba(255, 255, 255, 0.1) !important;
@@ -93,4 +93,14 @@
             StateHasChanged();
         }
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+     {
+        await AdminDetails.GetDetails();
+        if (firstRender) 
+        {
+            StateHasChanged();
+        }
+    }
+
 }

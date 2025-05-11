@@ -39,3 +39,35 @@ window.userCredentials = {
         document.cookie = "instance=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
     }
 }
+
+window.adminDetails = {
+    setName: function (value) {
+        const date = new Date();
+        date.setTime(date.getTime() + (12 * 60 * 60 * 1000));
+        let expireDate = "expires=" + date.toUTCString();
+
+        document.cookie = `name=${value}; ${expireDate}; path=/`;
+    },
+    getName: function () {
+        const match = document.cookie.match(/(?:^|;\s*)name=([^;]*)/);
+        return match ? match[1] : null;
+    },
+    removeName: function () {
+        document.cookie = "name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+    },
+
+    setRole: function (value) {
+        const date = new Date();
+        date.setTime(date.getTime() + (12 * 60 * 60 * 1000));
+        let expireDate = "expires=" + date.toUTCString();
+
+        document.cookie = `role=${value}; ${expireDate}; path=/`;
+    },
+    getRole: function () {
+        const match = document.cookie.match(/(?:^|;\s*)role=([^;]*)/);
+        return match ? match[1] : null;
+    },
+    removeRole: function () {
+        document.cookie = "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+    }
+}

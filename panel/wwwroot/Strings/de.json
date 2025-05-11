@@ -1,24 +1,29 @@
 {
-    "Culture.Current": "de",
+  "Culture.Current": "de",
 
-    "Page.Home.PageTitle": "Übersichtsseite",
-    "Page.Home.WelcomeText": "Willkommen im OpenCafe-Admin-Panel! Diese Seite wird später fertiggestellt.",
+  "Page.Home.PageTitle": "Dashboard",
+  "Page.Home.WelcomeText": "Willkommen im OpenCafe Admin Panel! Diese Seite wird später fertiggestellt.",
 
-    "Page.Login.PageTitle": "Anmeldung",
-    "Page.Login.Input.Instance.Label": "Instanz",
-    "Page.Login.Input.Token.Label": "Token",
-    "Page.Login.Input.Token.Placeholder": "Geben Sie hier Ihr Admin-Token ein...",
-    "Page.Login.Input.Token.Help": "Ein Admin-Token ist eine 32-stellige Zeichenfolge aus zufälligen Zeichen. Wenden Sie sich an Ihren Vorgesetzten, um es zu erhalten.",
-    "Page.Login.Alert.LoginFailed": "Anmeldung fehlgeschlagen! Bitte überprüfe deine Zugangsdaten und versuche es erneut.",
-    "Page.Login.Alert.InvalidURL": "",
-    "Page.Login.Alert.NotOC": "",
+  "Page.Login.PageTitle": "Anmelden",
+  "Page.Login.Input.Instance.Label": "Instanz",
+  "Page.Login.Input.Token.Label": "Token",
+  "Page.Login.Input.Token.Placeholder": "Geben Sie hier Ihr Admin-Token ein...",
+  "Page.Login.Input.Token.Help": "Ein Admin-Token ist eine 32-stellige Zeichenfolge, die aus zufälligen Zeichen besteht. Wenden Sie sich an Ihren Vorgesetzten, um es zu erhalten.",
+  "Page.Login.Alert.LoginFailed": "Anmeldung fehlgeschlagen! Überprüfen Sie Ihre Anmeldedaten und versuchen Sie es erneut.",
+  "Page.Login.Alert.InvalidURL": "Die von Ihnen angegebene URL ist ungültig. Geben Sie eine gültige URL ein und versuchen Sie es erneut.",
+  "Page.Login.Alert.NotOC": "Die von Ihnen angegebene URL gehört nicht zu einer OC-Instanz. Überprüfen Sie sie sorgfältig und versuchen Sie es erneut.",
 
-    "Menu.Nav.BrandName": "OpenCafe Admin-Panel",
-    "Menu.Nav.Link.Profile": "Profil",
-    "Menu.Nav.Link.Menu": "Menü",
-    "Menu.Nav.Link.Orders": "Bestellungen",
-    "Menu.Nav.Link.Instance": "Instanz",
-    "Menu.Nav.Link.Admins": "Administratoren",
-   
-    "Sprache": "Sprache"
-  }
+  "Page.Profile.PageTitle": "Profil",
+  "Page.Profile.Name": "Name",
+  "Page.Profile.Role": "Rolle",
+
+  "Menu.Nav.BrandName": "OpenCafe Admin Panel",
+  "Menu.Nav.Link.Profile": "Profil",
+  "Menu.Nav.Link.Menu": "Menü",
+  "Menu.Nav.Link.Orders": "Bestellungen",
+  "Menu.Nav.Link.Instance": "Instanz",
+  "Menu.Nav.Link.Admins": "Administratoren",
+
+  "Sprache": "Sprache"
+}
+

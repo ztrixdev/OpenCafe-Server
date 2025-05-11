@@ -1,4 +1,10 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+@inject panel.Services.Localization Localization
+@inject panel.Services.Credentials Credentials
+@inject panel.Services.AdminDetails AdminDetails
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -11,10 +17,6 @@
     </main>
 </div>
 
-@inject panel.Services.Localization Localization
-@inject panel.Services.Credentials Credentials
-@inject NavigationManager Navigation
-@inject IJSRuntime JsRuntime
 @code {
     private async Task ReLogin() 
     {
@@ -30,7 +32,9 @@
             bool isLoggedIn = false;
             try 
             {
-                isLoggedIn = await new panel.Helpers.Auth().Login(Credentials);
+                var authRes = await new panel.Helpers.Auth().Login(Credentials);
+                isLoggedIn = authRes.Key;
+                await AdminDetails.SetDetails(authRes.Value.Key, authRes.Value.Value);
             }
             catch (ArgumentException) 
             {  
@@ -53,4 +57,4 @@
         }
     }
 }
-   
+

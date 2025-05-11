@@ -13,6 +13,10 @@
     "Page.Login.Alert.InvalidURL": "The URL you've provided is invalid. Provide a valid URL and try again.",
     "Page.Login.Alert.NotOC": "The URL you've provided does not belong to an OC instance. Check it twice and try again.",
 
+    "Page.Profile.PageTitle": "Profile",
+    "Page.Profile.Name": "Name",
+    "Page.Profile.Role": "Role",
+
     "Menu.Nav.BrandName": "OpenCafe Admin Panel",
     "Menu.Nav.Link.Profile": "Profile",
     "Menu.Nav.Link.Menu": "Menu",

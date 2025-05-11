@@ -13,6 +13,10 @@
     "Page.Login.Alert.InvalidURL": "Введенный вами интернет-адрес не является настоящим интернет-адресом. Введите настоящий адрес и повторите попытку.",
     "Page.Login.Alert.NotOC": "Введенный вами интернет-адрес не принадлежит к инстанции OpenCafe. Проверьте адрес и повторите попытку.",  
 
+    "Page.Profile.PageTitle": "Профиль",
+    "Page.Profile.Name": "Имя",
+    "Page.Profile.Role": "Роль",
+
     "Menu.Nav.BrandName": "Админ-панель OpenCafe",
     "Menu.Nav.Link.Profile": "Профиль",
     "Menu.Nav.Link.Menu": "Меню",
