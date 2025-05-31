@@ -12,7 +12,7 @@ public static class ConnectionString
     /// <returns>string - the generated connection string</returns>
     public static string Create(DBConfig dbConfig)
     {
-            return $"mongodb://{dbConfig.User}:{dbConfig.Password}@{dbConfig.Host}:{dbConfig.Port}/{dbConfig.Name}?authSource={dbConfig.AuthSource}";
+        return $"mongodb://{dbConfig.User}:{dbConfig.Password}@{dbConfig.Host}:{dbConfig.Port}/{dbConfig.Name}?authSource={dbConfig.AuthSource}";
     }
 
     /// <summary>

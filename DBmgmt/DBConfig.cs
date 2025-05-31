@@ -20,7 +20,7 @@ public class DBConfig
     public string? AuthSource { get; set; }
 
     public Dictionary<string, Dictionary<string, string>>? CollectionEncryption { get; set; }
-    
+
     /// <summary>
     /// Initializes a new DBConfig with user-typed settings.
     /// </summary>
@@ -47,30 +47,30 @@ public class DBConfig
         var dbConfig = new DBConfig();
         var isConnectionSuccessful = false;
         var attempts = 0;
-        
+
         while (!isConnectionSuccessful && attempts < 5)
         {
             if (configMethod == 1)
             {
                 Console.WriteLine("Enter DB hostname (format: mydomainname.org): ");
                 dbConfig.Host = Console.ReadLine();
-                
+
                 Console.WriteLine("Enter DB port: ");
                 var portInput = Console.ReadLine();
                 dbConfig.Port = Convert.ToInt32(portInput);
-                
+
                 Console.WriteLine("Enter default database to use: ");
                 dbConfig.Name = Console.ReadLine();
-                
+
                 Console.WriteLine("Enter DB username: ");
                 dbConfig.User = Console.ReadLine();
-                
+
                 Console.WriteLine("Enter DB password: ");
                 dbConfig.Password = Console.ReadLine();
-                
+
                 Console.WriteLine("Enter DB AuthSource: ");
                 dbConfig.AuthSource = Console.ReadLine();
-                
+
                 var database = new Database(dbConfig);
                 isConnectionSuccessful = database.CheckConnection().Result;
                 attempts++;
@@ -79,7 +79,7 @@ public class DBConfig
             {
                 Console.WriteLine("Enter your connection string: ");
                 var connectionString = Console.ReadLine();
-                
+
                 if (connectionString != null)
                 {
                     try
@@ -89,16 +89,16 @@ public class DBConfig
                     catch (MongoConfigurationException exception)
                     {
                         Console.Error.WriteLine("Provided string is not a valid connection string!");
-                        
+
                         var logger = new Logger();
                         Task.Run(() => logger.LogException(exception));
-                        
+
                         isConnectionSuccessful = false;
                         attempts++;
                         continue;
                     }
                 }
-                
+
                 var database = new Database(dbConfig);
                 isConnectionSuccessful = database.CheckConnection().Result;
                 attempts++;
@@ -110,25 +110,36 @@ public class DBConfig
             Console.Error.WriteLine("Configuration failed. Try again!");
             Environment.Exit(0);
         }
-        
+
         Console.WriteLine("Creating collection encryption keys and ivs...");
+        var cardIDEncDecExpressions = CryptoHelper.GenCardIDEncDecExpressions();
         dbConfig.CollectionEncryption = new Dictionary<string, Dictionary<string, string>>()
         {
-            { "admins", new Dictionary<string, string>{
-                {"key", CryptoHelper.RandomBase64Async().Result}, 
-                {"iv", CryptoHelper.RandomBase64Async().Result}} 
+            { "admins", new Dictionary<string, string>
+                {
+                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {"iv", CryptoHelper.RandomBase64Async().Result}
+                }
             },
-            { "customers", new Dictionary<string, string>{
-                {"key", CryptoHelper.RandomBase64Async().Result}, 
-                {"iv", CryptoHelper.RandomBase64Async().Result}} 
+            { "customers", new Dictionary<string, string>
+                {
+                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {"iv", CryptoHelper.RandomBase64Async().Result}
+                }
+            },
+            {"cards", new Dictionary<string, string>
+                {
+                    {"encode", $"{cardIDEncDecExpressions.Key}"},
+                    {"decode", $"{cardIDEncDecExpressions.Value}"}
+                }
             }
         };
-        
+
         if (isConnectionSuccessful)
         {
             Console.WriteLine("Database connection successful! Creating a config file...");
         }
-        
+
         return dbConfig;
     }
 }

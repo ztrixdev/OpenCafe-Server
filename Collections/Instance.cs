@@ -4,9 +4,6 @@ using MongoDB.Bson;
 
 namespace server.Collections;
 
-/// <summary>
-/// Admin class. Represents objects from the admins collection in the database. 
-/// </summary>
 public class Instance
 {
     public ObjectId? _id { get; set; }

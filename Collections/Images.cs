@@ -58,7 +58,7 @@ public class Images
     /// <summary>
     /// Image uploading function. Allows admins to upload images to be publically accessible and write info about the image to the DB.
     /// </summary>
-    /// <param name="req">Refer to UploadRequest docs</param>
+    /// <param name="request">Refer to UploadRequest docs</param>
     /// <param name="database">Initialized Database object</param>
     /// <returns>
     /// - Bad Request if one of the fields is null.
@@ -66,33 +66,33 @@ public class Images
     /// - Unprocessable Entity if the Image doesn't have the right extension or if it's bigger than 5 MB
     /// - OK
     /// </returns>
-    public static async Task<IResult> Upload(UploadRequest req, Database database)
+    public static async Task<IResult> Upload(UploadRequest request, Database database)
     {
-        if (req.Image == null || string.IsNullOrWhiteSpace(req.Author) || string.IsNullOrWhiteSpace(req.Alt))
+        if (request.Image == null || string.IsNullOrWhiteSpace(request.Author) || string.IsNullOrWhiteSpace(request.Alt))
             return Results.BadRequest("One or more of the request fields is not specified!");
 
-        if (req.Image.Length > 8_000_000) 
+        if (request.Image.Length > 8_000_000) 
             return Results.UnprocessableEntity("Uploading images bigger then 8 MB in size is not supported.");
 
-        var isAdmin = await Admins.Login(new Admins.LoginRequest(req.Author), database);
+        var isAdmin = await Admins.Login(new Admins.LoginRequest(request.Author), database);
         if (isAdmin == Results.Unauthorized())
             return isAdmin;
 
-        var fileext = Path.GetExtension(req.Image.FileName);
+        var fileext = Path.GetExtension(request.Image.FileName);
         if (fileext != ".jpeg" && fileext != ".jpg" && fileext != ".png") 
             return Results.UnprocessableEntity("We only support .jpeg, .jpg and .png images.");
 
-        var imgFileName = GenFilename(fileext, req.Alt);
+        var imgFileName = GenFilename(fileext, request.Alt);
         var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OpenCafe/fs/img");
         
         using (var stream = new FileStream(Path.Combine(dir, imgFileName), FileMode.Create)) 
         {
-            await req.Image.CopyToAsync(stream);
+            await request.Image.CopyToAsync(stream);
         }
 
         var imageCollection = database._database.GetCollection<Image>("images");
-        var encryptedToken = await CryptoHelper.EncryptAsync(req.Author, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
-        await imageCollection.InsertOneAsync(new Image(filename: imgFileName, author: encryptedToken, alt: req.Alt));
+        var encryptedToken = await CryptoHelper.EncryptAsync(request.Author, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
+        await imageCollection.InsertOneAsync(new Image(filename: imgFileName, author: encryptedToken, alt: request.Alt));
 
         return Results.Ok("fs/img/" + imgFileName);
     }
@@ -100,7 +100,7 @@ public class Images
     /// <summary>
     /// Image deleting function. Allows an admin to delete an image from the database and from the filesystem with it's ID.
     /// </summary>
-    /// <param name="req">Refer to DeleteRequest docs</param>
+    /// <param name="request">Refer to DeleteRequest docs</param>
     /// <param name="database">Initialized Database object</param>
     /// <returns>
     /// - Bad Request if one of the request fields is not specified.
@@ -108,17 +108,17 @@ public class Images
     /// - Not Found if the image with the provided ID wasn't found in the DB.
     /// - OK.
     /// </returns>
-    public static async Task<IResult> Delete(DeleteRequest req, Database database) 
+    public static async Task<IResult> Delete(DeleteRequest request, Database database) 
     {
-        if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.ID.ToString())) 
+        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.ID.ToString())) 
             return Results.BadRequest("One or more of the request fields is not specified!");
         
-        var isAdmin = await Admins.Login(new Admins.LoginRequest(req.Token), database);
+        var isAdmin = await Admins.Login(new Admins.LoginRequest(request.Token), database);
         if (isAdmin == Results.Unauthorized()) 
             return isAdmin;
 
         var imageCollection = database._database.GetCollection<Image>("images");
-        var image = await imageCollection.Find((Image img) => img._id == req.ID).FirstOrDefaultAsync();
+        var image = await imageCollection.Find((Image img) => img._id == request.ID).FirstOrDefaultAsync();
         if (image == null)
             return Results.NotFound("An image with the specified ID was not found in the database!");
         

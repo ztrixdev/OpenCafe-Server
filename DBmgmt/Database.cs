@@ -21,7 +21,7 @@ public class Database
         _database = client.GetDatabase(config.Name);
         collectionEncryption = config.CollectionEncryption;
     }
-    
+
     /// <summary>
     /// Runs a MongoDB command
     /// </summary>
@@ -31,7 +31,7 @@ public class Database
     {
         return await _database.RunCommandAsync<BsonDocument>(command);
     }
-    
+
     /// <summary>
     /// Checks the connection to the remote database.
     /// </summary>
@@ -75,7 +75,7 @@ public class Database
             { "customers", false }, { "admins", false },
             { "dishes", false }, { "images", false }
         };
-        
+
         var collectionNames = _database.ListCollectionNames().ToList();
         foreach (var name in collectionNames)
         {
@@ -84,7 +84,7 @@ public class Database
                 areCollectionsPresent[name] = true;
             }
         }
-        
+
         foreach (KeyValuePair<string, bool> kvp in areCollectionsPresent)
         {
             if (kvp.Value == false)
@@ -102,8 +102,8 @@ public class Database
     public async Task InitCollections()
     {
         var logger = new Logger();
-        await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()" ));
-        
+        await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()"));
+
         var key = collectionEncryption["admins"]["key"];
         var iv = collectionEncryption["admins"]["iv"];
         if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
@@ -115,14 +115,14 @@ public class Database
             throw e;
         }
 
-        await _database.CreateCollectionAsync("customers"); 
+        await _database.CreateCollectionAsync("customers");
         await _database.CreateCollectionAsync("admins");
         await _database.CreateCollectionAsync("dishes");
         await _database.CreateCollectionAsync("images");
-        
+
         var firstHeadToken = await new Admins().GenTokenAsync();
         await Console.Out.WriteLineAsync("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
-        
+
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var directoryPath = Path.Combine(appDataPath, "OpenCafe");
         Directory.CreateDirectory(directoryPath); // Ensure directory exists

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using server.Collections;
 
 namespace server.Helpers;
 
@@ -27,8 +28,8 @@ public static class CryptoHelper
 
         using (Aes aes = Aes.Create())
         {
-            aes.Key = Convert.FromBase64String(key); 
-            aes.IV = Convert.FromBase64String(iv); 
+            aes.Key = Convert.FromBase64String(key);
+            aes.IV = Convert.FromBase64String(iv);
 
             ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
@@ -38,16 +39,16 @@ public static class CryptoHelper
                 {
                     await using (StreamWriter sw = new StreamWriter(cs))
                     {
-                        await sw.WriteAsync(plainText); 
+                        await sw.WriteAsync(plainText);
                     }
                     encryptedBytes = ms.ToArray();
                 }
             }
         }
 
-        return Convert.ToBase64String(encryptedBytes); 
+        return Convert.ToBase64String(encryptedBytes);
     }
-    
+
     /// <summary>
     /// Converts a base64 encrypted string into plain text
     /// </summary>
@@ -67,8 +68,8 @@ public static class CryptoHelper
 
         using (Aes aes = Aes.Create())
         {
-            aes.Key = Convert.FromBase64String(key); 
-            aes.IV = Convert.FromBase64String(iv); 
+            aes.Key = Convert.FromBase64String(key);
+            aes.IV = Convert.FromBase64String(iv);
 
             ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
@@ -80,15 +81,15 @@ public static class CryptoHelper
                 {
                     using (StreamReader sr = new StreamReader(cs))
                     {
-                        decryptedText = await sr.ReadToEndAsync(); 
+                        decryptedText = await sr.ReadToEndAsync();
                     }
                 }
             }
         }
 
-        return decryptedText; 
+        return decryptedText;
     }
-    
+
     public static async Task<string> RandomBase64Async()
     {
         return await Task.Run(() =>
@@ -100,5 +101,45 @@ public static class CryptoHelper
             }
             return Convert.ToBase64String(randomBytes);
         });
+    }
+
+    public static KeyValuePair<string, string> GenCardIDEncDecExpressions()
+    {
+        var encodeString = "+6996";
+        var decodeString = "-6996";
+
+        char[] actions = ['+', '-'];
+        int[] numbers = [];
+
+        var random = new Random();
+        // Fill the number array up with random numbers
+        for (int i = 0; i <= random.Next(48, 96); i++)
+        {
+            numbers[i] = random.Next(1, 2048);
+        }
+        // Create a random encoding string
+        for (int i = 0; i < numbers.Length; i++)
+        {
+            encodeString += $"{actions[random.Next(0, 1)]}{numbers[i]}";
+        }
+        // Reverse the encoding string
+        for (int i = 1; i < encodeString.Length; i++)
+        {
+            switch (encodeString[i])
+            {
+                case '+':
+                    decodeString += '-';
+                    break;
+                case '-':
+                    decodeString += '+';
+                    break;
+                default:
+                    decodeString += encodeString[i];
+                    break;
+            }
+        }
+
+        var result = new KeyValuePair<string, string>(encodeString, decodeString);
+        return result;
     }
 }

@@ -32,6 +32,18 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapGet("/", () => "Wilkommen auf OpenCafe!");
 
+// Customer-related API requests
+app.MapPut("/api/customer/register", 
+    async (Customers.RegisterRequest request) => await Customers.Register(request, db));
+
+app.MapGet("/api/customer/login", 
+    async (HttpRequest request) => 
+    {
+        var req = new Customers.EmailPasswordRequest(request.Query["email"], request.Query["password"]);
+        var res = await Customers.Login(req, db);
+        return res;
+    });
+
 // Admin-related API requests.
 
 app.MapGet("/api/admin/login", 
@@ -43,10 +55,10 @@ app.MapGet("/api/admin/login",
     });
 
 app.MapPut("/api/admin/register", 
-    async (Admins.RegisterRequest req) => await Admins.Register(req, db));
+    async (Admins.RegisterRequest request) => await Admins.Register(request, db));
 
 app.MapPut("/api/admin/changename", 
-    async (Admins.ChangeNameRequest req) => await Admins.ChangeName(req, db));
+    async (Admins.ChangeNameRequest request) => await Admins.ChangeName(request, db));
 
 app.MapDelete("/api/admin/delete", 
     async (HttpRequest request) => 
