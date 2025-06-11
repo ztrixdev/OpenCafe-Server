@@ -102,44 +102,4 @@ public static class CryptoHelper
             return Convert.ToBase64String(randomBytes);
         });
     }
-
-    public static KeyValuePair<string, string> GenCardIDEncDecExpressions()
-    {
-        var encodeString = "+6996";
-        var decodeString = "-6996";
-
-        char[] actions = ['+', '-'];
-        int[] numbers = [];
-
-        var random = new Random();
-        // Fill the number array up with random numbers
-        for (int i = 0; i <= random.Next(48, 96); i++)
-        {
-            numbers[i] = random.Next(1, 2048);
-        }
-        // Create a random encoding string
-        for (int i = 0; i < numbers.Length; i++)
-        {
-            encodeString += $"{actions[random.Next(0, 1)]}{numbers[i]}";
-        }
-        // Reverse the encoding string
-        for (int i = 1; i < encodeString.Length; i++)
-        {
-            switch (encodeString[i])
-            {
-                case '+':
-                    decodeString += '-';
-                    break;
-                case '-':
-                    decodeString += '+';
-                    break;
-                default:
-                    decodeString += encodeString[i];
-                    break;
-            }
-        }
-
-        var result = new KeyValuePair<string, string>(encodeString, decodeString);
-        return result;
-    }
 }

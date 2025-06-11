@@ -112,7 +112,6 @@ public class DBConfig
         }
 
         Console.WriteLine("Creating collection encryption keys and ivs...");
-        var cardIDEncDecExpressions = CryptoHelper.GenCardIDEncDecExpressions();
         dbConfig.CollectionEncryption = new Dictionary<string, Dictionary<string, string>>()
         {
             { "admins", new Dictionary<string, string>
@@ -129,8 +128,8 @@ public class DBConfig
             },
             {"cards", new Dictionary<string, string>
                 {
-                    {"encode", $"{cardIDEncDecExpressions.Key}"},
-                    {"decode", $"{cardIDEncDecExpressions.Value}"}
+                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {"iv", CryptoHelper.RandomBase64Async().Result}
                 }
             }
         };

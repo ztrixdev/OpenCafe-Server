@@ -73,7 +73,7 @@ public class Database
         var areCollectionsPresent = new Dictionary<string, bool>()
         {
             { "customers", false }, { "admins", false },
-            { "dishes", false }, { "images", false }
+            { "dishes", false }, { "images", false }, {"cards", false}
         };
 
         var collectionNames = _database.ListCollectionNames().ToList();
@@ -119,7 +119,7 @@ public class Database
         await _database.CreateCollectionAsync("admins");
         await _database.CreateCollectionAsync("dishes");
         await _database.CreateCollectionAsync("images");
-
+        await _database.CreateCollectionAsync("cards");
         var firstHeadToken = await new Admins().GenTokenAsync();
         await Console.Out.WriteLineAsync("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
 
@@ -132,6 +132,7 @@ public class Database
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
         var adminCollection = _database.GetCollection<BsonDocument>("admins");
-        await adminCollection.InsertOneAsync(new Admin(name: "FIRSTADMIN", role: "head", token: firstHeadToken).ToBsonDocument());
+        // will rename that later smh
+        await adminCollection.InsertOneAsync(new Admin(name: "JETLGGD", role: "head", token: firstHeadToken).ToBsonDocument());
     }
 }

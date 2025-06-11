@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.VisualBasic;
 using MongoDB.Bson;
@@ -36,12 +37,24 @@ app.MapGet("/", () => "Wilkommen auf OpenCafe!");
 app.MapPut("/api/customer/register", 
     async (Customers.RegisterRequest request) => await Customers.Register(request, db));
 
-app.MapGet("/api/customer/login", 
-    async (HttpRequest request) => 
+app.MapPost("/api/customer/login", 
+    async (Customers.EmailPasswordRequest request) =>await Customers.Login(request, db));
+
+
+// Loyalty-card related API requests
+app.MapPut("/api/card/issue",
+    async (Cards.OIIDRequest request) => await Cards.Issue(request, db));
+
+app.MapPost("/api/card/get",
+    async (Customers.EmailPasswordRequest request) => await Cards.Get(request, db));
+
+app.MapGet("/api/card/verify",
+    async (HttpRequest request) =>
     {
-        var req = new Customers.EmailPasswordRequest(request.Query["email"], request.Query["password"]);
-        var res = await Customers.Login(req, db);
-        return res;
+        var id = Int64.TryParse(request.Query["id"], out var num);
+        var req = new Cards.IDRequest(num);
+        var res = await Cards.Verify(req, db);
+        return res; 
     });
 
 // Admin-related API requests.
