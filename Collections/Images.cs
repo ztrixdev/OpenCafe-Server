@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using server.DBmgmt;
@@ -8,20 +9,13 @@ namespace server.Collections;
 /// <summary>
 /// Image class. Represents objects from the images collection of the database.
 /// </summary>
-public class Image {
+public class Image(string filename, string author, string alt)
+{
     public ObjectId _id { get; set; }
-    public string Filename { get; set; }
-    public string Author { get; set; }
-    public string Alt { get; set; }
-    public DateTime Uploaded { get; set; }
-
-    public Image(string filename, string author, string alt) 
-    {
-        Filename = filename;
-        Author = author;
-        Alt = alt;
-        Uploaded = DateTime.Now;
-    }
+    public string Filename { get; set; } = filename;
+    public string Author { get; set; } = author;
+    public string Alt { get; set; } = alt;
+    public DateTime Uploaded { get; set; } = DateTime.Now;
 }
 
 public class Images
@@ -42,13 +36,12 @@ public class Images
     public record DeleteRequest(ObjectId ID, string Token);
 
     /// <summary>
-    /// Filename generative func. Generates a template-based name for an uploaded image for later use. 
-    /// The template looks like this (currently):
-    /// first 10 chars of Alt_meow_last 6 digits of the current UnixTimeSeconds.extension
+    /// Generates a unique filename for an uploaded image.
+    /// Format: First 10 chars of alt + "_meow_" + last 6 Unix timestamp digits + extension.
     /// </summary>
-    /// <param name="ext">File extension</param>
-    /// <param name="alt">Alt for the image</param>
-    /// <returns></returns>
+    /// <param name="ext">The file extension (e.g., ".jpg").</param>
+    /// <param name="alt">The alt-text used in filename generation.</param>
+    /// <returns>The generated filename.</returns>
     public static string GenFilename(string ext, string alt) 
     {
         var currentTime = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -56,15 +49,15 @@ public class Images
     }
 
     /// <summary>
-    /// Image uploading function. Allows admins to upload images to be publically accessible and write info about the image to the DB.
+    /// Uploads an image to the filesystem and registers it in the database.
     /// </summary>
-    /// <param name="request">Refer to UploadRequest docs</param>
-    /// <param name="database">Initialized Database object</param>
+    /// <param name="request">The upload request parameters.</param>
+    /// <param name="database">Initialized database connection.</param>
     /// <returns>
-    /// - Bad Request if one of the fields is null.
-    /// - Unauthorized if the Author is not an admin.
-    /// - Unprocessable Entity if the Image doesn't have the right extension or if it's bigger than 5 MB
-    /// - OK
+    /// - Bad Request if fields are missing;
+    /// - Unauthorized if the author is not an admin;
+    /// - Unprocessable Entity for invalid file type or size (>8MB);
+    /// - OK.
     /// </returns>
     public static async Task<IResult> Upload(UploadRequest request, Database database)
     {
@@ -98,14 +91,14 @@ public class Images
     }
     
     /// <summary>
-    /// Image deleting function. Allows an admin to delete an image from the database and from the filesystem with it's ID.
+    /// Deletes an image from the filesystem and database.
     /// </summary>
-    /// <param name="request">Refer to DeleteRequest docs</param>
-    /// <param name="database">Initialized Database object</param>
+    /// <param name="request">The delete request parameters.</param>
+    /// <param name="database">Initialized database connection.</param>
     /// <returns>
-    /// - Bad Request if one of the request fields is not specified.
-    /// - Unauthorized if the token provided doesn't belong to an admin.
-    /// - Not Found if the image with the provided ID wasn't found in the DB.
+    /// - Bad Request if fields are missing.
+    /// - Unauthorized if the token is invalid.
+    /// - Not Found if the image doesn't exist.
     /// - OK.
     /// </returns>
     public static async Task<IResult> Delete(DeleteRequest request, Database database) 
@@ -114,7 +107,7 @@ public class Images
             return Results.BadRequest("One or more of the request fields is not specified!");
         
         var isAdmin = await Admins.Login(new Admins.LoginRequest(request.Token), database);
-        if (isAdmin == Results.Unauthorized()) 
+        if (isAdmin is UnauthorizedResult) 
             return isAdmin;
 
         var imageCollection = database._database.GetCollection<Image>("images");
@@ -128,7 +121,11 @@ public class Images
         var oper = await imageCollection.DeleteOneAsync(new BsonDocument("_id", image._id));
         return Results.Ok(oper);
     }
-
+    /// <summary>
+    /// Retrieves all images from the database.
+    /// </summary>
+    /// <param name="database">Initialized database connection.</param>
+    /// <returns>OK with a list of all images.</returns>
     public static async Task<IResult> GetAll(Database database) 
     {
         var imageCollection = database._database.GetCollection<Image>("images");
@@ -136,11 +133,19 @@ public class Images
         
         return Results.Ok(images);
     }
-
+    /// <summary>
+    /// Retrieves a single image by its ID.
+    /// </summary>
+    /// <param name="_id">The MongoDB ObjectId of the image.</param>
+    /// <param name="database">Initialized database connection.</param>
+    /// <returns>
+    ///  - Not Found if the image doesn't exist;
+    /// - OK.
+    /// </returns>
     public static async Task<IResult> GetOne(ObjectId _id, Database database) 
     {
         var imageCollection = database._database.GetCollection<Image>("images");
-        var image = await imageCollection.Find((Image img) => img._id == _id).FirstOrDefaultAsync();
+        var image = await imageCollection.Find(img => img._id == _id).FirstOrDefaultAsync();
         
         return Results.Ok(image);
     }

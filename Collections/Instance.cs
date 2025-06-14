@@ -4,37 +4,23 @@ using MongoDB.Bson;
 
 namespace server.Collections;
 
+// Addresses and admins moved to Points
 public class Instance
+(
+    bool isBackup,
+    string[] cultures, string logo,
+    Dictionary<string, string> name,
+    Dictionary<string, string> description,
+    string[] pics
+)
 {
     public ObjectId? _id { get; set; }
-    public bool IsBackup { get; set; }
-    public string[]? Cultures { get; set; } // Languages used to localize the menu and other aspects
-    public string? Logo { get; set; }
-    public Dictionary<string, string>? Name { get; set; }
-    public Dictionary<string, string>? Description { get; set; }
-    public Dictionary<string, string[]>? Adresses { get; set; }
-    public string[]? Pics { get; set; }
-    public string[]? Admins { get; set; }
-
-    public Instance(
-        bool isBackup,
-        string[] cultures, string logo,
-        Dictionary<string, string> name,
-        Dictionary<string, string> description,
-        Dictionary<string, string[]> adresses,
-        string[] pics,
-        string[] admins
-    )
-    {
-        IsBackup = isBackup;
-        Cultures = cultures;
-        Logo = logo;
-        Name = name;
-        Description = description;
-        Adresses = adresses;
-        Pics = pics;
-        Admins = admins;
-    }
+    public bool IsBackup { get; set; } = isBackup;
+    public string[]? Cultures { get; set; } = cultures;
+    public string? Logo { get; set; } = logo;
+    public Dictionary<string, string>? Name { get; set; } = name;
+    public Dictionary<string, string>? Description { get; set; } = description;
+    public string[]? Pics { get; set; } = pics;
 }
 
 public class InstanceMgmt

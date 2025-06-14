@@ -12,26 +12,18 @@ using server.Logging;
 
 namespace server.Collections;
 
-public class Card
+public class Card(long ownerIID, string id, long balance, long[]? orders)
 {
     [BsonId]
     public ObjectId Id { get; set; }
 
     // Customer's InternalID
-    public long OwnerIID { get; set; }
+    public long OwnerIID { get; set; } = ownerIID;
     // The card's id (Customer's CardID)
     [BsonElement("ID")]
-    public string ID { get; set; }
-    public long Balance { get; set; }
-    public long[]? Orders { get; set; }
-
-    public Card(long ownerIID, string id, long balance, long[]? orders)
-    {
-        OwnerIID = ownerIID;
-        ID = id;
-        Balance = balance;
-        Orders = orders;
-    }
+    public string ID { get; set; } = id;
+    public long Balance { get; set; } = balance;
+    public long[]? Orders { get; set; } = orders;
 }
 
 public class Cards
@@ -142,7 +134,7 @@ public class Cards
 
         var cardCollection = database._database.GetCollection<Card>("cards");
         var filter = new BsonDocument("ID", encodedCardID);
-        var update = new BsonDocument("$set", balance - request.ToRetract);
+        var update = new BsonDocument("$set", new BsonDocument("Balance", balance - request.ToRetract));
         var res = cardCollection.UpdateOneAsync(filter, update);
         return Results.Ok(res);
      }

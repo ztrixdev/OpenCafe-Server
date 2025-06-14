@@ -3,25 +3,20 @@ using MongoDB.Driver;
 using server.DBmgmt;
 using MongoDB.Bson;
 using server.Helpers;
+using Microsoft.AspNetCore.Mvc;
 
 namespace server.Collections;
 
 /// <summary>
 /// Admin class. Represents objects from the admins collection in the database. 
 /// </summary>
-public class Admin
+public class Admin(string name, string[] roles, int? boundTo, string token)
 {
     public ObjectId _id { get; set; }
-    public string Name { get; set; }
-    public string Role { get; set; }
-    public string Token { get; set; }
-
-    public Admin(string name, string role, string token)
-    {
-        Name = name;
-        Role = role;
-        Token = token;
-    }
+    public string Name { get; set; } = name;
+    public string[] Roles { get; set; } = roles;
+    public int? BoundTo { get; set; } = boundTo;
+    public string Token { get; set; } = token;
 }
 
 public class Admins
@@ -91,23 +86,23 @@ public class Admins
     public static async Task<Admin> GetAdminByToken(string token, Database database)
     {
         if (string.IsNullOrWhiteSpace(token))
-            throw new ArgumentNullException("A token cannot be null.", nameof(token));
+            throw new ArgumentNullException(nameof(token), "A token cannot be null.");
 
         var encryptedToken = await CryptoHelper.EncryptAsync(token, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
 
         var adminCollection = database._database.GetCollection<Admin>("admins");
-        var admin = await adminCollection.Find((Admin admin) => admin.Token == encryptedToken).FirstOrDefaultAsync();
+        var admin = await adminCollection.Find(admin => admin.Token == encryptedToken).FirstOrDefaultAsync();
 
         return admin;
     }
 
-    public static async Task<IResult> CheckHead(string Token, Database database)
+    public static async Task<bool> CheckHead(string Token, Database database)
     {
         var admin = await GetAdminByToken(Token, database);
 
-        if (admin == null || admin.Role != "head")
-            return Results.Unauthorized();
-        return Results.Ok();
+        if (admin == null || !admin.Roles.Contains("head"))
+            return false;
+        return !false;
     }
 
     /// <summary>
@@ -131,7 +126,7 @@ public class Admins
     }
 
     /// <summary>
-    /// Register function. Allows a head admin to "hire" new admins with a default (lowest at the hierarchy) "sprvsr" role, an auto-generated token and a custom name.
+    /// Register function. Allows a head admin to "hire" new admins with a default "general" role, an auto-generated token and a custom name.
     /// </summary>
     /// <param name="request">Refer to RegisterRequest docs</param>
     /// <param name="database">Initialized Database object</param>
@@ -147,10 +142,10 @@ public class Admins
 
         var admin = await GetAdminByToken(request.Token, database);
 
-        if (admin != null && admin.Role == "head")
+        if (admin != null && await CheckHead(admin.Token, database))
         {
             var newToken = await CryptoHelper.EncryptAsync(await new Admins().GenTokenAsync(), database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
-            var newAdmin = new Admin(request.Name, "sprvsr", newToken);
+            var newAdmin = new Admin(name: request.Name, roles: ["general"], token: newToken, boundTo: null);
             await database._database.GetCollection<Admin>("admins").InsertOneAsync(newAdmin);
             return Results.Ok(newAdmin);
         }
@@ -181,7 +176,11 @@ public class Admins
 
         if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
-        if (adminObjects[0].Token == adminObjects[1].Token || adminObjects[0].Role == "head")
+        if (
+        adminObjects[0].Token == adminObjects[1].Token
+         ||  await CheckHead(adminObjects[0].Token, database) 
+         || (adminObjects[0].Roles.Contains("general") && adminObjects[1].Roles.Contains("sprvsr"))
+         )
         {
             var filter = new BsonDocument("Token", adminObjects[1].Token);
             var update = new BsonDocument("$set", new BsonDocument("Name", request.Name));
@@ -215,7 +214,7 @@ public class Admins
 
         if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
-        if (adminObjects[0].Role == "head")
+        if (await CheckHead(adminObjects[0].Token, database)  || adminObjects[0].Roles.Contains("general") && adminObjects[1].Roles.Contains("sprvsr"))
         {
             await database._database.GetCollection<Admin>("admins").DeleteOneAsync((Admin admin) => admin.Token == adminObjects[1].Token);
             return Results.Ok($"{adminObjects[1].Name} was deleted successfuly.");
@@ -231,7 +230,7 @@ public class Admins
         var admin = await GetAdminByToken(request.Token, database);
 
         if (admin == null) return Results.NotFound();
-        if (admin.Role != "head") return Results.Unauthorized();
+        if (!await CheckHead(admin.Token, database)) return Results.Unauthorized();
 
         var adminObjects = await database._database.GetCollection<Admin>("admins").Find(_ => true).ToListAsync();
         foreach (var adminObject in adminObjects)

@@ -7,37 +7,26 @@ using server.Logging;
 namespace server.Collections;
 
 public class Customer
+(
+    long internalID,
+    string username,
+    string email,
+    bool isEmailVerified,
+    string password,
+    long[]? hearts,
+    long[]? reviews,
+    long? card
+)
 {
     public ObjectId Id { get; set; }
-    public long InternalID { get; set; }
-    public string Username { get; set; }
-    public string Email { get; set; }
-    public bool IsEmailVerified { get; set; }
-    public string Password { get; set; }
-    public long[]? Hearts { get; set; }
-    public long[]? Reviews { get; set; }
-    public long? Card { get; set; }
-
-    public Customer(
-        long internalID,
-        string username,
-        string email,
-        bool isEmailVerified,
-        string password,
-        long[]? hearts,
-        long[]? reviews,
-        long? card
-    )
-    {
-        InternalID = internalID;
-        Username = username;
-        Email = email;
-        IsEmailVerified = isEmailVerified;
-        Password = password;
-        Hearts = hearts;
-        Reviews = reviews;
-        Card = card;
-    }
+    public long InternalID { get; set; } = internalID;
+    public string Username { get; set; } = username;
+    public string Email { get; set; } = email;
+    public bool IsEmailVerified { get; set; } = isEmailVerified;
+    public string Password { get; set; } = password;
+    public long[]? Hearts { get; set; } = hearts;
+    public long[]? Reviews { get; set; } = reviews;
+    public long? Card { get; set; } = card;
 }
 
 public class Customers
