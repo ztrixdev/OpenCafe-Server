@@ -32,6 +32,7 @@ public class Points
     public record TwoAdminRequest(int PID, string Token1, string Token2, string Action);
     public record UpdateRequest(int PID, string Token, Dictionary<string, string> Updates);
     public record PIDTRequest(int PID, string Token);
+    public record PIDRequest(int PID);
 
     /// <summary>
     /// Creates a new point in the system. Only accessible by a head admin.
@@ -212,8 +213,26 @@ public class Points
             var admin_filter = new BsonDocument("Token", request.Token2);
             var admin_update = new BsonDocument("$set", new BsonDocument("BoundTo", UpdateID));
             await adminsCollection.UpdateOneAsync(admin_filter, admin_update);
+
+            return Results.Ok();
         }
 
         return Results.Unauthorized();
+    }
+
+    public static async Task<IResult> LoadByPID(int PID, Database database)
+    {
+        if (PID == -1) return Results.BadRequest("Point with a PointID -1 cannot exist.");
+
+        var point = await database._database.GetCollection<Point>("points").Find(point => point.PointID == PID).FirstOrDefaultAsync();
+
+        if (point == null) return Results.NotFound();
+        else return Results.Ok(point);
+    }
+    
+    public static async Task<IResult> LoadAll(Database database)
+    {
+        var points = await database._database.GetCollection<Point>("points").Find(_ => true).ToListAsync();
+        return Results.Ok(points);
     }
 }

@@ -47,19 +47,19 @@ public class Database
         catch (MongoAuthenticationException exception)
         {
             await logger.LogException(exception);
-            await Console.Out.WriteLineAsync("Unable to authenticate, re-enter your credentials.");
+            Console.WriteLine("Unable to authenticate, re-enter your credentials.");
             return false;
         }
         catch (MongoConfigurationException exception)
         {
             await logger.LogException(exception);
-            await Console.Out.WriteLineAsync("The connection string is invalid.");
+            Console.WriteLine("The connection string is invalid.");
             return false;
         }
         catch (TimeoutException exception)
         {
             await logger.LogException(exception);
-            await Console.Out.WriteLineAsync("A timeout has occurred.");
+            Console.WriteLine("A timeout has occurred.");
             return false;
         }
     }
@@ -73,7 +73,8 @@ public class Database
         var areCollectionsPresent = new Dictionary<string, bool>()
         {
             { "customers", false }, { "admins", false },
-            { "dishes", false }, { "images", false }, {"cards", false}
+             {"menu", false}, { "dishes", false }, { "images", false }, {"cards", false}, {"isses", false},
+            { "points", false}, {"instances", false}, {"localization", false}
         };
 
         var collectionNames = _database.ListCollectionNames().ToList();
@@ -115,13 +116,14 @@ public class Database
             throw e;
         }
 
-        await _database.CreateCollectionAsync("customers");
-        await _database.CreateCollectionAsync("admins");
-        await _database.CreateCollectionAsync("dishes");
-        await _database.CreateCollectionAsync("images");
-        await _database.CreateCollectionAsync("cards");
+        // simplified ts.
+        string[] collectionNames = ["customers", "admins", "dishes", "images", "cards", "points", "issues", "instances", "localization", "menu"];
+        foreach (var name in collectionNames)
+        {
+            await _database.CreateCollectionAsync(name);
+        }
         var firstHeadToken = await new Admins().GenTokenAsync();
-        await Console.Out.WriteLineAsync("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
+        Console.WriteLine("This is an auto-generated token for a head admin, it's CRUCIAL to write it down somewhere secure. It is also stored in a file in the app folder. You NEED to remove it afterwards." + Environment.NewLine + firstHeadToken);
 
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var directoryPath = Path.Combine(appDataPath, "OpenCafe");
@@ -132,7 +134,7 @@ public class Database
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
         var adminCollection = _database.GetCollection<BsonDocument>("admins");
-        // will rename that later smh
-        await adminCollection.InsertOneAsync(new Admin(name: "JETLGGD", role: "head", token: firstHeadToken).ToBsonDocument());
+        // angel may cry 2 hell yeah
+        await adminCollection.InsertOneAsync(new Admin(name: "millions", roles: ["head"], token: firstHeadToken, boundTo: -1).ToBsonDocument());
     }
 }

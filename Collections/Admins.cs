@@ -3,7 +3,6 @@ using MongoDB.Driver;
 using server.DBmgmt;
 using MongoDB.Bson;
 using server.Helpers;
-using Microsoft.AspNetCore.Mvc;
 
 namespace server.Collections;
 

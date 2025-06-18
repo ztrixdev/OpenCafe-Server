@@ -36,7 +36,7 @@ public class InstanceMgmt
         if (request.Instance.IsBackup == true)
             return Results.BadRequest("Do not try to flash a backup as a stream instance configuration!");
 
-        if (await Admins.CheckHead(request.Token, database) == Results.Unauthorized())
+        if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
@@ -51,7 +51,7 @@ public class InstanceMgmt
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request._id.Timestamp.ToString()))
             return Results.BadRequest("One or more of the required fields is not provided!");
 
-        if (await Admins.CheckHead(request.Token, database) == Results.Unauthorized())
+        if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
@@ -69,7 +69,7 @@ public class InstanceMgmt
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request._id.Timestamp.ToString()))
             return Results.BadRequest("One or more of the required fields is not provided!");
 
-        if (await Admins.CheckHead(request.Token, database) == Results.Unauthorized())
+        if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
@@ -89,7 +89,7 @@ public class InstanceMgmt
         if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request._id.Timestamp.ToString()))
             return Results.BadRequest("One or more of the required fields is not provided!");
 
-        if (await Admins.CheckHead(request.Token, database) == Results.Unauthorized())
+        if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
