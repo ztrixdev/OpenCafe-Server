@@ -73,7 +73,7 @@ public class Database
         var areCollectionsPresent = new Dictionary<string, bool>()
         {
             { "customers", false }, { "admins", false },
-             {"menu", false}, { "dishes", false }, { "images", false }, {"cards", false}, {"isses", false},
+             {"menu", false}, { "dishes", false }, { "images", false }, {"cards", false}, {"issues", false},
             { "points", false}, {"instances", false}, {"localization", false}
         };
 

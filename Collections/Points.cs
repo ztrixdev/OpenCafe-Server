@@ -17,6 +17,7 @@ public class Point
     int[]? activeissues
 )
 {
+    public ObjectId Id { get; set; }
     public int PointID { get; set; } = pointID;
     public string[]? Supervisors { get; set; } = supervisors;
     public string? Address { get; set; } = address;

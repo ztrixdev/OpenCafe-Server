@@ -55,7 +55,6 @@ app.MapGet("/api/card/verify",
     });
 
 // Admin-related API requests.
-
 app.MapGet("/api/admin/login", 
     async (HttpRequest request) => 
     {
@@ -84,8 +83,72 @@ app.MapGet("/api/admin/getAll",
         return await Admins.GetAll(req, db);
     });
 
-// Image-related API requests.
+// Point-related API requests.
+app.MapPut("/api/points/new",
+     async (Points.AddRequest request) => await Points.New(request, db));
 
+app.MapPatch("/api/points/update",
+    async (Points.UpdateRequest request) => await Points.Update(request, db));
+
+app.MapDelete("/api/points/delete", 
+    async (HttpRequest request) => 
+    {
+        var req = new Points.PIDTRequest(Int32.Parse(request.Query["pointID"]), request.Query["token"]);
+        return await Points.Delete(req, db);
+    });
+
+app.MapPatch("/api/points/adminmgmt",
+     async (Points.TwoAdminRequest request) => await Points.PointAdminActions(request, db));
+
+app.MapGet("/api/points/load",
+    async (HttpRequest request) =>
+    {
+        return await Points.LoadByPID(Int32.Parse(request.Query["pointID"]), db);
+    });
+
+app.MapGet("/api/points/loadAll",
+    async () => { return await Points.LoadAll(db); });  
+
+// Issue-related API requests.
+app.MapPut("/api/issues/raise",
+    async (Issues.RaiseRequest request) => await Issues.Raise(request, db));
+
+app.MapGet("/api/issues/getAll",
+    async (HttpRequest request) =>
+    {
+        var req = new Admins.GetAllRequest(request.Query["token"]);
+        return await Issues.GetAll(req, db);
+    });
+
+app.MapPatch("/api/issues/modify",
+    async (Issues.ModifyRequest request) => await Issues.Modify(request, db));
+
+// Instance-related API requests.
+app.MapPut("/api/instances/flash",
+    async (InstanceMgmt.FlashRequest request) => await InstanceMgmt.Flash(request, db));
+
+app.MapGet("/api/instances/restore",
+    async (HttpRequest request) =>
+    {
+        var req = new InstanceMgmt.IdRequest(request.Query["token"], ObjectId.Parse(request.Query["id"]));
+        return await InstanceMgmt.Restore(req, db);   
+    });
+
+app.MapDelete("/api/instances/delete",
+    async (HttpRequest request) =>
+    {
+        var req = new InstanceMgmt.IdRequest(request.Query["token"], ObjectId.Parse(request.Query["id"]));
+        return await InstanceMgmt.Delete(req, db);   
+    });
+
+app.MapGet("/api/instances/copy",
+    async (HttpRequest request) =>
+    {
+        var req = new InstanceMgmt.IdRequest(request.Query["token"], ObjectId.Parse(request.Query["id"]));
+        return await InstanceMgmt.Copy(req, db);   
+    });
+
+// Image-related API requests.
 app.MapPut("/api/images/upload",
     async (HttpContext ctx) => 
     {
