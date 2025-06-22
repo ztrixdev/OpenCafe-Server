@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using server.DBmgmt;
-using server.Helpers;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 /// <summary>
 /// Image class. Represents objects from the images collection of the database.

@@ -1,10 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using server.DBmgmt;
-using server.Helpers;
-using server.Logging;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
+using OpenCafe.Server.Logging;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 public class Customer
 (

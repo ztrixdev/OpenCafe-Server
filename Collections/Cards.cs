@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using server.DBmgmt;
-using server.Helpers;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 public class Card(long ownerIID, string id, long balance, long[]? orders)
 {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace server.Logging;
+namespace OpenCafe.Server.Logging;
 /// <summary>
 /// LogFile class. 
 /// </summary>
@@ -35,7 +35,7 @@ public static class LogFile
             var log = new Log(
                 type: "Info",
                 message: "Logfile created",
-                where: "server.Logging.LogFile.CreateAsync()");
+                where: "OpenCafe.Server.Logging.LogFile.CreateAsync()");
                 
             var options = new JsonSerializerOptions
             {

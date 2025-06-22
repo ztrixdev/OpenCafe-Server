@@ -1,6 +1,6 @@
 using MongoDB.Driver;
 
-namespace server.DBmgmt;
+namespace OpenCafe.Server.DBmgmt;
 
 public static class ConnectionString
 {

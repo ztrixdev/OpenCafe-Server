@@ -1,9 +1,9 @@
 using System.Security.Authentication;
 using System.Text.Json;
-using server.Helpers;
-using server.Logging;
+using OpenCafe.Server.Helpers;
+using OpenCafe.Server.Logging;
 
-namespace server.DBmgmt;
+namespace OpenCafe.Server.DBmgmt;
 
 /// <summary>
 /// Config file class. Implements methods for reading the file and creating a new one. 

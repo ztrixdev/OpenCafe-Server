@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace server.Helpers;
+namespace OpenCafe.Server.Helpers;
 
 /// <summary>
 /// Cryptography helper class. 

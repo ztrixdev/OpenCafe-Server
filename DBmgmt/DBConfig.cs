@@ -1,8 +1,8 @@
 using MongoDB.Driver;
-using server.Helpers;
-using server.Logging;
+using OpenCafe.Server.Helpers;
+using OpenCafe.Server.Logging;
 
-namespace server.DBmgmt;
+namespace OpenCafe.Server.DBmgmt;
 
 /// <summary>
 /// DBConfig class. Contains database and data encryption credentials.

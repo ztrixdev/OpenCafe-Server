@@ -1,7 +1,7 @@
 using Microsoft.Extensions.FileProviders;
 using MongoDB.Bson;
-using server;
-using server.Collections;
+using OpenCafe.Server;
+using OpenCafe.Server.Collections;
 
 var dbs = new DBService();
 var db = await dbs.Start();

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace server.Logging;
+namespace OpenCafe.Server.Logging;
 
 public class Logger
 {

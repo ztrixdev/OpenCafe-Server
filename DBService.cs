@@ -1,8 +1,8 @@
 using System.Security.Authentication;
-using server.DBmgmt;
-using server.Logging;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Logging;
 
-namespace server;
+namespace OpenCafe.Server;
 
 /// <summary>
 /// DBService class. 

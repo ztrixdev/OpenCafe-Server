@@ -1,10 +1,10 @@
 using MongoDB.Driver;
-using server.DBmgmt;
+using OpenCafe.Server.DBmgmt;
 using MongoDB.Bson;
 using Microsoft.AspNetCore.Mvc;
-using server.Helpers;
+using OpenCafe.Server.Helpers;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 public class Point
 (

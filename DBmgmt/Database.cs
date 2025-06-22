@@ -1,11 +1,11 @@
 using System.Security.Authentication;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using server.Logging;
-using server.Collections;
-using server.Helpers;
+using OpenCafe.Server.Logging;
+using OpenCafe.Server.Collections;
+using OpenCafe.Server.Helpers;
 
-namespace server.DBmgmt;
+namespace OpenCafe.Server.DBmgmt;
 
 public class Database
 {
@@ -74,7 +74,7 @@ public class Database
         {
             { "customers", false }, { "admins", false },
              {"menu", false}, { "dishes", false }, { "images", false }, {"cards", false}, {"issues", false},
-            { "points", false}, {"instances", false}, {"localization", false}
+            { "points", false}, {"instances", false}, {"strings", false}
         };
 
         var collectionNames = _database.ListCollectionNames().ToList();
@@ -116,8 +116,7 @@ public class Database
             throw e;
         }
 
-        // simplified ts.
-        string[] collectionNames = ["customers", "admins", "dishes", "images", "cards", "points", "issues", "instances", "localization", "menu"];
+        string[] collectionNames = ["customers", "admins", "dishes", "images", "cards", "points", "issues", "instances", "strings", "menu"];
         foreach (var name in collectionNames)
         {
             await _database.CreateCollectionAsync(name);
@@ -133,8 +132,12 @@ public class Database
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.1.bckp"), firstHeadToken);
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
-        var adminCollection = _database.GetCollection<BsonDocument>("admins");
-        // angel may cry 2 hell yeah
-        await adminCollection.InsertOneAsync(new Admin(name: "millions", roles: ["head"], token: firstHeadToken, boundTo: -1).ToBsonDocument());
+        var adminCollection = _database.GetCollection<Admin>("admins");
+        // a lil bit of god system
+        await adminCollection.InsertOneAsync(new Admin(name: "dollars out on top on god", roles: ["head"], token: firstHeadToken, boundTo: -1));
+
+        var menusCollection = _database.GetCollection<Menu>("menus");
+        var generalMenu = new Menu(menuID: 1, Strings.GenSI("menu", 1, "name"), Strings.GenSI("menu", 1, "description"), null);
+        await menusCollection.InsertOneAsync(generalMenu);
     }
 }

@@ -1,4 +1,4 @@
-namespace server.Logging;
+namespace OpenCafe.Server.Logging;
 
 /// <summary>
 /// Log class. Used to log errors, notifications, requests etc. 

@@ -1,8 +1,8 @@
 using MongoDB.Driver;
-using server.DBmgmt;
 using MongoDB.Bson;
+using OpenCafe.Server.DBmgmt;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 // Addresses and admins moved to Points
 public class Instance
@@ -27,6 +27,11 @@ public class InstanceMgmt
 {
     public record FlashRequest(string Token, Instance Instance);
     public record IdRequest(string Token, ObjectId _id);
+
+    public static async Task<Instance> Load(Database database)
+    {
+        return await database._database.GetCollection<Instance>("instances").Find(instance => !instance.IsBackup).FirstOrDefaultAsync();
+    }
 
     public static async Task<IResult> Flash(FlashRequest request, Database database)
     {
@@ -62,7 +67,7 @@ public class InstanceMgmt
         var flash = await Flash(frq, database);
 
         return flash;
-    }      
+    }
 
     public static async Task<IResult> Delete(IdRequest request, Database database)
     {
@@ -78,7 +83,7 @@ public class InstanceMgmt
             return Results.NotFound();
 
         if (bckp.IsBackup == false)
-                return Results.BadRequest("Cannot delete the stream configuration!");
+            return Results.BadRequest("Cannot delete the stream configuration!");
 
         var deletion = await instanceCollection.DeleteOneAsync((Instance instance) => instance._id == request._id);
         return Results.Ok(deletion);

@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using MongoDB.Driver;
-using server.DBmgmt;
 using MongoDB.Bson;
-using server.Helpers;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 /// <summary>
 /// Admin class. Represents objects from the admins collection in the database. 

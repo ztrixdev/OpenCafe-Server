@@ -1,8 +1,8 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
-using server.DBmgmt;
+using OpenCafe.Server.DBmgmt;
 
-namespace server.Collections;
+namespace OpenCafe.Server.Collections;
 
 public class Issue
 (
