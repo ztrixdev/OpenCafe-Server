@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
 using OpenCafe.Server.Helpers;
 using OpenCafe.Server.Logging;
+using BCrypt.Net;
 
 namespace OpenCafe.Server.Collections;
 
@@ -121,7 +122,7 @@ public class Customers
         var iv = database.collectionEncryption["customers"]["iv"];
 
         var encryptedEmail = await CryptoHelper.EncryptAsync(request.Email, key, iv);
-        var encryptedPassword = await CryptoHelper.EncryptAsync(request.Password, key, iv);
+        var encryptedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var random = new Random();
         long newIID = random.NextInt64();
@@ -159,11 +160,8 @@ public class Customers
         if (customer == null)
             return Results.NotFound("Cannot find a user with this email in the databse.");
 
-        var key = database.collectionEncryption["customers"]["key"];
-        var iv = database.collectionEncryption["customers"]["iv"];
-
-        if (customer.Password != await CryptoHelper.EncryptAsync(request.Password, key, iv))
-            return Results.Unauthorized();
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, customer.Password))
+                return Results.Unauthorized();
 
         return Results.Ok(customer);
     }

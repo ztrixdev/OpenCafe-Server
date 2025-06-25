@@ -2,6 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
+using Parlot.Fluent;
 
 namespace OpenCafe.Server.Collections;
 
@@ -58,5 +59,24 @@ public class Strings
         var sistr = await GetBySI(@string.SI, database);
 
         return sistr;
+    }
+
+    public static async Task<List<String>> Update(string SI, string culture, string newContent, Database database)
+    {
+        if (string.IsNullOrWhiteSpace(SI) || string.IsNullOrWhiteSpace(culture) || string.IsNullOrWhiteSpace(newContent))
+            throw new ArgumentException("An SI, a culture and new content are required to execute this operation.");
+
+        var _ = await GetBySI(SI, database) ?? throw new NotSupportedException("Cannot update a non-existing string.");
+
+        var stringsCollection = database._database.GetCollection<String>("strings");
+
+        BsonDocument filter = new("Culture", culture), update = new("$set", new BsonDocument("Content", newContent));
+        await stringsCollection.UpdateOneAsync(filter, update);
+
+        filter = new("Culture", new BsonDocument("$ne", culture));
+        update = new("$set", new BsonDocument("Outdated", true));
+        await stringsCollection.UpdateManyAsync(filter, update);
+
+        return await GetBySI(SI, database);
     }
 }

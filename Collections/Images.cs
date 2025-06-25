@@ -142,11 +142,13 @@ public class Images
     ///  - Not Found if the image doesn't exist;
     /// - OK.
     /// </returns>
-    public static async Task<IResult> GetOne(ObjectId _id, Database database) 
+    public static async Task<IResult> GetOne(ObjectId _id, Database database)
     {
         var imageCollection = database._database.GetCollection<Image>("images");
         var image = await imageCollection.Find(img => img._id == _id).FirstOrDefaultAsync();
-        
+        if (image == null)
+            return Results.NotFound();
+
         return Results.Ok(image);
     }
 }
