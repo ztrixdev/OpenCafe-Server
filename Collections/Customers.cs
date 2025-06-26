@@ -84,11 +84,19 @@ public class Customers
                 if (!iidParse)
                     throw new FormatException("The provided IID isn't a valid number");
 
-                customer = await customerCollection.Find((Customer customer) => customer.InternalID == iid).FirstOrDefaultAsync();
+                customer = await customerCollection.Find(customer => customer.InternalID == iid).FirstOrDefaultAsync();
                 break;
             case "email":
-                var encryptedEmail = await CryptoHelper.EncryptAsync(Parameter.Value, database.collectionEncryption["customers"]["key"], database.collectionEncryption["customers"]["iv"]);
-                customer = await customerCollection.Find((Customer customer) => customer.Email == encryptedEmail).FirstOrDefaultAsync(); ;
+                var customers = await customerCollection.Find(_ => true).ToListAsync();
+
+                foreach (var c in customers)
+                {
+                    var email = await CryptoHelper.DecryptAsync(c.Email, database.collectionEncryption["customers"]["key"]);
+                    if (email == Parameter.Value)
+                        customer = c;
+                }
+                
+                customer = null;
                 break;
             default:
                 return null;
@@ -119,9 +127,8 @@ public class Customers
             return Results.Conflict("A customer with the provided email already exists in the database.");
 
         var key = database.collectionEncryption["customers"]["key"];
-        var iv = database.collectionEncryption["customers"]["iv"];
 
-        var encryptedEmail = await CryptoHelper.EncryptAsync(request.Email, key, iv);
+        var encryptedEmail = await CryptoHelper.EncryptAsync(request.Email, key);
         var encryptedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var random = new Random();

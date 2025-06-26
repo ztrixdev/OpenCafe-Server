@@ -45,7 +45,7 @@ public class InstanceMgmt
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
-        await instanceCollection.DeleteManyAsync((Instance instance) => instance.IsBackup == false);
+        await instanceCollection.DeleteManyAsync(instance => instance.IsBackup == false);
         await instanceCollection.InsertOneAsync(request.Instance);
 
         return Results.Ok();
@@ -60,7 +60,7 @@ public class InstanceMgmt
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
-        var bckp = await instanceCollection.Find((Instance instance) => instance._id == request._id).FirstOrDefaultAsync();
+        var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         bckp.IsBackup = false;
 
         var frq = new FlashRequest(request.Token, bckp);
@@ -78,14 +78,14 @@ public class InstanceMgmt
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
-        var bckp = await instanceCollection.Find((Instance instance) => instance._id == request._id).FirstOrDefaultAsync();
+        var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         if (bckp == null)
             return Results.NotFound();
 
         if (bckp.IsBackup == false)
             return Results.BadRequest("Cannot delete the stream configuration!");
 
-        var deletion = await instanceCollection.DeleteOneAsync((Instance instance) => instance._id == request._id);
+        var deletion = await instanceCollection.DeleteOneAsync(instance => instance._id == request._id);
         return Results.Ok(deletion);
     }
 
@@ -98,7 +98,7 @@ public class InstanceMgmt
             return Results.Unauthorized();
 
         var instanceCollection = database._database.GetCollection<Instance>("Instances");
-        var bckp = await instanceCollection.Find((Instance instance) => instance._id == request._id).FirstOrDefaultAsync();
+        var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         bckp.IsBackup = true;
 
         await instanceCollection.InsertOneAsync(bckp);

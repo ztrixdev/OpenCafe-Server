@@ -40,7 +40,7 @@ public class Cards
 
         var cardCollection = database._database.GetCollection<Card>("cards");
         var newID = new Random().NextInt64();
-        var encID = await CryptoHelper.EncryptAsync(newID.ToString(), database.collectionEncryption["cards"]["key"], database.collectionEncryption["cards"]["iv"]);
+        var encID = await CryptoHelper.EncryptAsync(newID.ToString(), database.collectionEncryption["cards"]["key"]);
         await cardCollection.InsertOneAsync(new Card(ownerIID: request.OwnerIID, id: encID, balance: 0, orders: null));
 
         var filter = new BsonDocument("InternalID", request.OwnerIID);
@@ -55,10 +55,10 @@ public class Cards
         if (request == null || request.ID == 0)
             return Results.BadRequest("No card ID was provided.");
 
-        var encID = await CryptoHelper.EncryptAsync(request.ID.ToString(), database.collectionEncryption["cards"]["key"], database.collectionEncryption["cards"]["iv"]);
+        var encID = await CryptoHelper.EncryptAsync(request.ID.ToString(), database.collectionEncryption["cards"]["key"]);
 
         var cardCollection = database._database.GetCollection<Card>("cards");
-        var card = await cardCollection.Find((Card card) => card.ID == encID).FirstOrDefaultAsync();
+        var card = await cardCollection.Find(card => card.ID == encID).FirstOrDefaultAsync();
 
         Dictionary<string, object> response;
         if (card != null)
@@ -91,10 +91,10 @@ public class Cards
             var customer = await Customers.GetCustomerBy(new KeyValuePair<string, string>("email", request.Email), database);
 
             var cardCollection = database._database.GetCollection<Card>("cards");
-            var card = await cardCollection.Find((Card card) => card.OwnerIID == customer.InternalID).FirstOrDefaultAsync();
+            var card = await cardCollection.Find(card => card.OwnerIID == customer.InternalID).FirstOrDefaultAsync();
             if (card == null) return Results.NotFound("No card has been registered for this user.");
 
-            var decodedCardID = await CryptoHelper.DecryptAsync(card.ID, database.collectionEncryption["cards"]["key"], database.collectionEncryption["cards"]["iv"]);
+            var decodedCardID = await CryptoHelper.DecryptAsync(card.ID, database.collectionEncryption["cards"]["key"]);
             var parseID = Int64.TryParse(decodedCardID, out var decID);
             if (!parseID) return Results.Conflict();
 
@@ -109,7 +109,7 @@ public class Cards
         if (request == null || request.ToRetract == 0 || request.ID == 0 )
             return Results.BadRequest("One or more of the request fields is not provided.");
 
-        var encodedCardID = await CryptoHelper.EncryptAsync(request.ID.ToString(), database.collectionEncryption["cards"]["key"], database.collectionEncryption["cards"]["iv"]);
+        var encodedCardID = await CryptoHelper.EncryptAsync(request.ID.ToString(), database.collectionEncryption["cards"]["key"]);
         
         var adminLoginResult = await Admins.Login(new Admins.LoginRequest(request.Token), database);
         if (adminLoginResult is not OkObjectResult)

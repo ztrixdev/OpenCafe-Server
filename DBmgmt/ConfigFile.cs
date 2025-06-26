@@ -33,7 +33,7 @@ class ConfigFile
             var json = File.ReadAllText(ConfigFilePath);
             try
             {
-                json = CryptoHelper.DecryptAsync(json, key, iv).Result;
+                json = CryptoHelper.DecryptDBCfgAsync(json, key, iv).Result;
             }
             catch (AggregateException exception)
             { 
@@ -56,7 +56,7 @@ class ConfigFile
         }
 
         var init = DBConfig.Init();
-        var encryptedInit = CryptoHelper.DecryptAsync(New(init, key, iv), key, iv).Result; 
+        var encryptedInit = CryptoHelper.DecryptDBCfgAsync(New(init, key, iv), key, iv).Result; 
         
         return JsonSerializer.Deserialize<DBConfig>(encryptedInit); 
     }
@@ -73,7 +73,7 @@ class ConfigFile
     private static string New(DBConfig dbConfig, string key, string iv)
     {
         var json = JsonSerializer.Serialize(dbConfig);
-        var encryptedCfg = CryptoHelper.EncryptAsync(json, key, iv).Result;
+        var encryptedCfg = CryptoHelper.EncryptDBCfgAsync(json, key, iv).Result;
         // Creates the main db.cfg
         File.WriteAllText(ConfigFilePath, encryptedCfg);
         // Creates duplicates (db.cfg.1.bckp, db.cfg.2.bckp)

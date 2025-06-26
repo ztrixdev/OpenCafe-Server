@@ -64,12 +64,12 @@ public class Images
         if (request.Image == null || string.IsNullOrWhiteSpace(request.Author) || string.IsNullOrWhiteSpace(request.Alt))
             return Results.BadRequest("One or more of the request fields is not specified!");
 
-        if (request.Image.Length > 8_000_000) 
+        if (request.Image.Length > 20_000_000) 
             return Results.UnprocessableEntity("Uploading images bigger then 8 MB in size is not supported.");
 
-        var isAdmin = await Admins.Login(new Admins.LoginRequest(request.Author), database);
-        if (isAdmin == Results.Unauthorized())
-            return isAdmin;
+        var admin = await Admins.GetAdminByToken(request.Author, database);
+        if (admin == null || !admin.Roles.Contains("general")) 
+            return Results.Unauthorized();
 
         var fileext = Path.GetExtension(request.Image.FileName);
         if (fileext != ".jpeg" && fileext != ".jpg" && fileext != ".png") 
@@ -84,8 +84,7 @@ public class Images
         }
 
         var imageCollection = database._database.GetCollection<Image>("images");
-        var encryptedToken = await CryptoHelper.EncryptAsync(request.Author, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
-        await imageCollection.InsertOneAsync(new Image(filename: imgFileName, author: encryptedToken, alt: request.Alt));
+        await imageCollection.InsertOneAsync(new Image(filename: imgFileName, author: admin.Token, alt: request.Alt));
 
         return Results.Ok("fs/img/" + imgFileName);
     }
@@ -111,7 +110,7 @@ public class Images
             return isAdmin;
 
         var imageCollection = database._database.GetCollection<Image>("images");
-        var image = await imageCollection.Find((Image img) => img._id == request.ID).FirstOrDefaultAsync();
+        var image = await imageCollection.Find(img => img._id == request.ID).FirstOrDefaultAsync();
         if (image == null)
             return Results.NotFound("An image with the specified ID was not found in the database!");
         
@@ -121,16 +120,17 @@ public class Images
         var oper = await imageCollection.DeleteOneAsync(new BsonDocument("_id", image._id));
         return Results.Ok(oper);
     }
+    
     /// <summary>
     /// Retrieves all images from the database.
     /// </summary>
     /// <param name="database">Initialized database connection.</param>
     /// <returns>OK with a list of all images.</returns>
-    public static async Task<IResult> GetAll(Database database) 
+    public static async Task<IResult> GetAll(Database database)
     {
         var imageCollection = database._database.GetCollection<Image>("images");
         var images = await imageCollection.Find(_ => true).ToListAsync();
-        
+
         return Results.Ok(images);
     }
     /// <summary>

@@ -82,7 +82,7 @@ public class Points
 
         var pointsCollection = database._database.GetCollection<Point>("points");
 
-        var point = await pointsCollection.Find((Point point) => point.PointID == request.PID).FirstOrDefaultAsync();
+        var point = await pointsCollection.Find(point => point.PointID == request.PID).FirstOrDefaultAsync();
         if (point == null) return Results.NotFound("Cannot find a point with such an ID");
 
         BsonDocument filter = new("PointID", request.PID);
@@ -207,7 +207,7 @@ public class Points
             }
 
             var point_filter = new BsonDocument("PointID", request.PID);
-            var encryptedToken = await CryptoHelper.EncryptAsync(request.Token2, database.collectionEncryption["admins"]["key"], database.collectionEncryption["admins"]["iv"]);
+            var encryptedToken = adminObjects[1].Token;
             var point_update = new BsonDocument(BsonAction, new BsonDocument("Supervisors", encryptedToken));
             await pointsCollection.UpdateOneAsync(point_filter, point_update);
 

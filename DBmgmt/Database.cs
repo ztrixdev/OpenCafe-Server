@@ -131,7 +131,7 @@ public class Database
         // Creates duplicates of firsthead_token.txt
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.1.bckp"), firstHeadToken);
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
-        firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key, iv);
+        firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key);
         var adminCollection = _database.GetCollection<Admin>("admins");
         // a lil bit of god system
         await adminCollection.InsertOneAsync(new Admin(name: "dollars out on top on god", roles: ["head"], token: firstHeadToken, boundTo: -1));
