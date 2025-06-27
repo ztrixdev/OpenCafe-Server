@@ -23,10 +23,42 @@ public class Menu
 
 public class Menus
 {
+    /// <summary>
+    /// Represents a request to create a new menu.
+    /// </summary>
+    /// <param name="Token">The authentication token for the admin creating the menu.</param>
+    /// <param name="Name">The name of the menu.</param>
+    /// <param name="Description">The description of the menu.</param>
+    /// <param name="FirstDIsh">The ID of the first dish to be included in the menu.</param>
     public record CreateRequest(string Token, string Name, string Description, int FirstDIsh);
+
+    /// <summary>
+    /// Represents a request to delete a menu by its ID.
+    /// </summary>
+    /// <param name="Token">The authentication token for the admin performing the deletion.</param>
+    /// <param name="ID">The unique identifier of the menu to be deleted.</param>
     public record MIDTRequest(string Token, int ID);
+
+    /// <summary>
+    /// Represents a request to update an existing menu's details.
+    /// </summary>
+    /// <param name="MID">The unique identifier of the menu to be updated.</param>
+    /// <param name="Token">The authentication token for the admin performing the update.</param>
+    /// <param name="Updates">A dictionary containing the fields to be updated and their new values.</param>
     public record UpdateRequest(int MID, string Token, Dictionary<string, string> Updates);
 
+
+    /// <summary>
+    /// Creates a new menu in the database.
+    /// </summary>
+    /// <param name="request">Refer to CreateRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - Bad Request if the first dish does not exist;
+    /// - Created if the menu is successfully created.
+    /// </returns>
     public static async Task<IResult> Create(CreateRequest request, Database database)
     {
         if (request == null
@@ -61,6 +93,17 @@ public class Menus
         return Results.Created();
     }
 
+    /// <summary>
+    /// Updates the details of an existing menu.
+    /// </summary>
+    /// <param name="request">Refer to UpdateRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - Not Found if the menu with the specified ID does not exist;
+    /// - OK if the menu is successfully updated and returns the updated Menu object.
+    /// </returns>
     public static async Task<IResult> Update(UpdateRequest request, Database database)
     {
         if (string.IsNullOrWhiteSpace(request.Token) || request.Updates == null || request.MID == -1)
@@ -134,6 +177,17 @@ public class Menus
         return Results.Ok(await menuCollection.Find(menu => menu.MenuID == request.MID).FirstOrDefaultAsync());
     }
 
+    /// <summary>
+    /// Deletes a menu from the database by its unique identifier.
+    /// </summary>
+    /// <param name="request">Refer to MIDTRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - Not Found if the menu with the specified ID does not exist;
+    /// - OK if the menu is successfully deleted.
+    /// </returns>
     public static async Task<IResult> Delete(MIDTRequest request, Database database)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.Token) || request.ID == -1)

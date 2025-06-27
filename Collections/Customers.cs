@@ -87,16 +87,7 @@ public class Customers
                 customer = await customerCollection.Find(customer => customer.InternalID == iid).FirstOrDefaultAsync();
                 break;
             case "email":
-                var customers = await customerCollection.Find(_ => true).ToListAsync();
-
-                foreach (var c in customers)
-                {
-                    var email = await CryptoHelper.DecryptAsync(c.Email, database.collectionEncryption["customers"]["key"]);
-                    if (email == Parameter.Value)
-                        customer = c;
-                }
-                
-                customer = null;
+                customer = await customerCollection.Find(customer => customer.Email == Parameter.Value).FirstOrDefaultAsync();
                 break;
             default:
                 return null;
@@ -126,9 +117,6 @@ public class Customers
         if (await GetCustomerBy(new KeyValuePair<string, string>("email", request.Email), database) != null)
             return Results.Conflict("A customer with the provided email already exists in the database.");
 
-        var key = database.collectionEncryption["customers"]["key"];
-
-        var encryptedEmail = await CryptoHelper.EncryptAsync(request.Email, key);
         var encryptedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var random = new Random();
@@ -140,7 +128,7 @@ public class Customers
             continue;
         }
 
-        var customer = new Customer(internalID: newIID, username: request.Username, email: encryptedEmail, isEmailVerified: false, password: encryptedPassword, null, null, null);
+        var customer = new Customer(internalID: newIID, username: request.Username, email: request.Email, isEmailVerified: false, password: encryptedPassword, null, null, null);
         var customerCollection = database._database.GetCollection<Customer>("customers");
         await customerCollection.InsertOneAsync(customer);
 

@@ -32,8 +32,30 @@ using MongoDB.Bson;
 
 public class Dishes
 {
+    /// <summary>
+    /// Represents a request to create a new dish.
+    /// </summary>
+    /// <param name="Token">The authentication token for the admin creating the dish.</param>
+    /// <param name="Name">The name of the dish.</param>
+    /// <param name="Description">The description of the dish.</param>
+    /// <param name="Price">The price of the dish.</param>
+    /// <param name="NutriProfile">A dictionary representing the nutritional profile of the dish.</param>
+    /// <param name="Images">An array of image identifiers associated with the dish.</param>
     public record NewRequest(string Token, string Name, string Description, int Price, Dictionary<string, int> NutriProfile, string[] Images);
+
+    /// <summary>
+    /// Represents a request to retrieve or delete a dish by its ID.
+    /// </summary>
+    /// <param name="DID">The unique identifier of the dish.</param>
+    /// <param name="Token">The authentication token for the admin performing the action.</param>
     public record DIDTRequest(int DID, string Token);
+
+    /// <summary>
+    /// Represents a request to update a dish's details.
+    /// </summary>
+    /// <param name="DID">The unique identifier of the dish to be updated.</param>
+    /// <param name="Token">The authentication token for the admin performing the update.</param>
+    /// <param name="Updates">A dictionary containing the fields to be updated and their new values.</param>
     public record UpdateRequest(int DID, string Token, Dictionary<string, string> Updates);
 
     public static async Task<Dish> GetDishByID(int ID, Database database)
@@ -41,6 +63,16 @@ public class Dishes
         return await database._database.GetCollection<Dish>("dishes").Find(dish => dish.DishID == ID).FirstOrDefaultAsync();
     }
 
+    /// <summary>
+    /// Creates a new dish in the database.
+    /// </summary>
+    /// <param name="request">Refer to NewRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - OK if the dish is successfully created and returns the created Dish object.
+    /// </returns>
     public static async Task<IResult> New(NewRequest request, Database database)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.Token)
@@ -90,6 +122,18 @@ public class Dishes
         return Results.Ok(dish);
     }
 
+
+    /// <summary>
+    /// Updates the details of an existing dish.
+    /// </summary>
+    /// <param name="request">Refer to UpdateRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - Not Found if the dish with the specified ID does not exist;
+    /// - OK if the dish is successfully updated and returns the updated Dish object.
+    /// </returns>
     public static async Task<IResult> Update(UpdateRequest request, Database database)
     {
          if (string.IsNullOrWhiteSpace(request.Token) || request.Updates == null || request.DID == -1)
@@ -174,6 +218,17 @@ public class Dishes
         return Results.Ok(await dishesCollection.Find(dish => dish.DishID == request.DID).FirstOrDefaultAsync());
     }
 
+    /// <summary>
+    /// Deletes a dish from the database by its unique identifier.
+    /// </summary>
+    /// <param name="request">Refer to DIDTRequest docs.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>
+    /// - Bad Request if any required fields are missing or invalid;
+    /// - Unauthorized if the admin does not have the necessary permissions;
+    /// - Not Found if the dish with the specified ID does not exist;
+    /// - OK if the dish is successfully deleted.
+    /// </returns>
     public static async Task<IResult> Delete(DIDTRequest request, Database database)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.Token) || request.DID == -1)

@@ -23,6 +23,14 @@ public class String
 
 public class Strings
 {
+    /// <summary>
+    /// Generates a string identifier (SI) based on the provided parameters.
+    /// </summary>
+    /// <param name="whatFor">The type of entity the SI is for (e.g., "MENU", "DISH").</param>
+    /// <param name="originalID">The original ID of the entity.</param>
+    /// <param name="whereAt">The context of the string (e.g., "NAME", "DESCRIPTION").</param>
+    /// <returns>The generated string identifier (SI).</returns>
+    /// <exception cref="ArgumentException">Thrown if the parameters are not valid.</exception>
     public static string GenSI(
         string whatFor, int originalID, string whereAt
     )
@@ -35,12 +43,24 @@ public class Strings
         return $"{whatFor.ToUpper()}%{originalID}%{whereAt.ToUpper()}";
     }
 
+    /// <summary>
+    /// Retrieves a list of strings by their string identifier (SI).
+    /// </summary>
+    /// <param name="SI">The string identifier to search for.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>A list of strings matching the provided SI.</returns>
     public static async Task<List<String>> GetBySI(string SI, Database database)
     {
         var stringsCollection = database._database.GetCollection<String>("strings");
         return await stringsCollection.Find(str => str.SI == SI).ToListAsync();
     }
 
+
+    /// <summary>
+    /// Validates a string identifier (SI) to ensure it meets basic criteria.
+    /// </summary>
+    /// <param name="SI">The string identifier to validate.</param>
+    /// <returns>True if the SI is valid; otherwise, false.</returns>
     public static bool ValidateSI(string SI)
     {
         // TODO: Extend for advanced String Identifier validation.
@@ -48,6 +68,13 @@ public class Strings
         return true;
     }
 
+    /// <summary>
+    /// Inserts a new string into the database.
+    /// </summary>
+    /// <param name="string">The string object to insert.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>A list of strings matching the inserted string's SI.</returns>
+    /// <exception cref="ArgumentException">Thrown if the string details are incomplete.</exception>
     public static async Task<List<String>> InsertNew(String @string, Database database)
     {
         if (string.IsNullOrWhiteSpace(@string.Culture) || string.IsNullOrWhiteSpace(@string.Content) || !ValidateSI(@string.SI))
@@ -61,6 +88,16 @@ public class Strings
         return sistr;
     }
 
+    /// <summary>
+    /// Updates the content of an existing string in the database.
+    /// </summary>
+    /// <param name="SI">The string identifier of the string to update.</param>
+    /// <param name="culture">The culture of the string to update.</param>
+    /// <param name="newContent">The new content for the string.</param>
+    /// <param name="database">Initialized Database object.</param>
+    /// <returns>A list of strings matching the updated string's SI.</returns>
+    /// <exception cref="ArgumentException">Thrown if any required parameters are missing.</exception>
+    /// <exception cref="NotSupportedException">Thrown if the string to update does not exist.</exception>
     public static async Task<List<String>> Update(string SI, string culture, string newContent, Database database)
     {
         if (string.IsNullOrWhiteSpace(SI) || string.IsNullOrWhiteSpace(culture) || string.IsNullOrWhiteSpace(newContent))
