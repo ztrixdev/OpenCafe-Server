@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 using Parlot.Fluent;
 
 namespace OpenCafe.Server.Collections;
@@ -68,7 +69,7 @@ public class Menus
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
         if (await Dishes.GetDishByID(request.FirstDIsh, database) == null)
@@ -76,8 +77,8 @@ public class Menus
 
         var instance = await InstanceMgmt.Load(database);
         var newMenuID = new Random().Next();
-        string nameSI = Strings.GenSI(whatFor: "menu", originalID: newMenuID, whereAt: "name"),
-        descSI = Strings.GenSI(whatFor: "menu", originalID: newMenuID, whereAt: "description");
+        string nameSI = Strings.GenSI(whatFor: nameof(Strings.AllowedWhatFor.MENU), originalID: newMenuID, whereAt: nameof(Strings.AllowedWhereAt.NAME)),
+        descSI = Strings.GenSI(whatFor: nameof(Strings.AllowedWhatFor.MENU), originalID: newMenuID, whereAt: nameof(Strings.AllowedWhereAt.DESCRIPTION));
 
         var DCstrName = new String(culture: instance.Cultures[0], content: request.Name,
         si: nameSI, outdated: false);
@@ -87,7 +88,7 @@ public class Menus
         await Strings.InsertNew(@string: DCstrName, database);
         await Strings.InsertNew(@string: DCstrDesc, database);
 
-        var menuCollection = database._database.GetCollection<Menu>("menu");
+        var menuCollection = database._database.GetCollection<Menu>(nameof(Database.Collections.menus));
         await menuCollection.InsertOneAsync(new Menu(newMenuID, nameSI, descSI, [request.FirstDIsh]));
 
         return Results.Created();
@@ -110,10 +111,10 @@ public class Menus
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
-        var menuCollection = database._database.GetCollection<Menu>("menus");
+        var menuCollection = database._database.GetCollection<Menu>(nameof(Database.Collections.menus));
 
         var menu = await menuCollection.Find(menu => menu.MenuID == request.MID).FirstOrDefaultAsync();
         if (menu == null) return Results.NotFound("Cannot find a menu with such an ID");
@@ -127,7 +128,7 @@ public class Menus
                 case "+dish":
                 case "-dish":
                     {
-                        var operation = key == "+dish" ? "$push" : "$pull";
+                        var operation = key == "+dish" ? BsonOperations.Push : BsonOperations.Pull;
                         var parseId = Int32.TryParse(request.Updates[key], out var dishID);
 
                         if (!parseId)
@@ -139,13 +140,13 @@ public class Menus
 
                         bool dishExistsInMenu = menu.Dishes.Contains(dishID);
 
-                        if (operation == "$push" && dishExistsInMenu)
+                        if (operation == BsonOperations.Push && dishExistsInMenu)
                             return Results.Conflict($"The dish with ID={dishID} is already present in the menu!");
 
-                        if (operation == "$pull" && !dishExistsInMenu)
+                        if (operation == BsonOperations.Pull && !dishExistsInMenu)
                             return Results.Conflict($"The dish with ID={dishID} is not present in the menu!");
 
-                        update = new(operation, new BsonDocument("Dishes", dishID));
+                        update = new(operation, new BsonDocument(nameof(Menu.Dishes), dishID));
                         await menuCollection.UpdateOneAsync(filter, update);
                         break;
                     }
@@ -194,10 +195,10 @@ public class Menus
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
-        var menuCollection = database._database.GetCollection<Menu>("menus");
+        var menuCollection = database._database.GetCollection<Menu>(nameof(Database.Collections.menus));
 
         var menu = await menuCollection.Find(menu => menu.MenuID == request.ID).FirstOrDefaultAsync();
         if (menu == null)

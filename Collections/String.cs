@@ -2,6 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 using Parlot.Fluent;
 
 namespace OpenCafe.Server.Collections;
@@ -23,6 +24,17 @@ public class String
 
 public class Strings
 {
+
+    public enum AllowedWhatFor
+    {
+        MENU, DISH, CATEGORY, OTHER
+    }
+
+    public enum AllowedWhereAt
+    {
+        NAME, DESCRIPTION
+    }
+    
     /// <summary>
     /// Generates a string identifier (SI) based on the provided parameters.
     /// </summary>
@@ -35,8 +47,8 @@ public class Strings
         string whatFor, int originalID, string whereAt
     )
     {
-        string[] allowedWhatFor = ["MENU", "DISH", "CATEGORY", "OTHER"];
-        string[] allowedWhereAt = ["NAME", "DESCRIPTION"];
+        string[] allowedWhatFor = [.. Enum.GetNames<AllowedWhatFor>()];
+        string[] allowedWhereAt = [.. Enum.GetNames<AllowedWhereAt>()];
         if (!allowedWhatFor.Contains(whatFor.ToUpper()) || !allowedWhereAt.Contains(whereAt.ToUpper()))
             throw new ArgumentException($"Cannot create an SI for something that is not in the allowed list. Allowed list: {allowedWhatFor.ToString} + {allowedWhereAt.ToString}");
 
@@ -51,7 +63,7 @@ public class Strings
     /// <returns>A list of strings matching the provided SI.</returns>
     public static async Task<List<String>> GetBySI(string SI, Database database)
     {
-        var stringsCollection = database._database.GetCollection<String>("strings");
+        var stringsCollection = database._database.GetCollection<String>(nameof(Database.Collections.strings));
         return await stringsCollection.Find(str => str.SI == SI).ToListAsync();
     }
 
@@ -80,7 +92,7 @@ public class Strings
         if (string.IsNullOrWhiteSpace(@string.Culture) || string.IsNullOrWhiteSpace(@string.Content) || !ValidateSI(@string.SI))
             throw new ArgumentException("Cannot insert a non-detailed string!");
 
-        var stringsCollection = database._database.GetCollection<String>("strings");
+        var stringsCollection = database._database.GetCollection<String>(nameof(Database.Collections.strings));
 
         await stringsCollection.InsertOneAsync(@string);
         var sistr = await GetBySI(@string.SI, database);
@@ -105,13 +117,13 @@ public class Strings
 
         var _ = await GetBySI(SI, database) ?? throw new NotSupportedException("Cannot update a non-existing string.");
 
-        var stringsCollection = database._database.GetCollection<String>("strings");
+        var stringsCollection = database._database.GetCollection<String>(nameof(Database.Collections.strings));
 
-        BsonDocument filter = new("Culture", culture), update = new("$set", new BsonDocument("Content", newContent));
+        BsonDocument filter = new(nameof(String.Culture), culture), update = new(BsonOperations.Set, new BsonDocument("Content", newContent));
         await stringsCollection.UpdateOneAsync(filter, update);
 
-        filter = new("Culture", new BsonDocument("$ne", culture));
-        update = new("$set", new BsonDocument("Outdated", true));
+        filter = new(nameof(String.Culture), new BsonDocument(BsonOperations.NotEqual, culture));
+        update = new(BsonOperations.Set, new BsonDocument("Outdated", true));
         await stringsCollection.UpdateManyAsync(filter, update);
 
         return await GetBySI(SI, database);

@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 
 namespace OpenCafe.Server.Collections;
 
@@ -65,7 +66,7 @@ public class Issues()
             return Results.BadRequest("One or more of the request fields is not provided!");
 
         var admin = await Admins.GetAdminByToken(request.Raiser, database);
-        if (admin == null || !admin.Roles.Contains("sprvsr"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.sprvsr)))
             return Results.Unauthorized();
 
         var iid = new Random().Next();
@@ -77,7 +78,7 @@ public class Issues()
             title: request.Title, contacts: request.Contacts, description: request.Description,
             whenRaised: DateTime.Now
         );
-        var issuesCollection = database._database.GetCollection<Issue>("issues");
+        var issuesCollection = database._database.GetCollection<Issue>(nameof(Database.Collections.issues));
         await issuesCollection.InsertOneAsync(issue);
 
         var newIssue = await issuesCollection.Find(issue => issue.IssueID == iid).FirstOrDefaultAsync();
@@ -100,10 +101,10 @@ public class Issues()
             return Results.BadRequest("One or more of the request fields is not provided!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
-        var issuesCollection = database._database.GetCollection<Issue>("issues");
+        var issuesCollection = database._database.GetCollection<Issue>(nameof(Database.Collections.issues));
         var issues = issuesCollection.Find(_ => true).ToListAsync();
         return Results.Ok(issues);
     }
@@ -124,7 +125,7 @@ public class Issues()
         if (request == null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Action) || request.IssueID == -1)
             return Results.BadRequest("One or more of the request fields is not provided!");
 
-        var issuesCollection = database._database.GetCollection<Issue>("issues");
+        var issuesCollection = database._database.GetCollection<Issue>(nameof(Database.Collections.issues));
         var issue = await issuesCollection.Find(issue => issue.IssueID == request.IssueID).FirstOrDefaultAsync();
         if (issue == null)
             return Results.NotFound("An issue with the provided IssueID was not found in the database!");
@@ -133,8 +134,8 @@ public class Issues()
         if
         (
             admin == null
-            || (!(admin.Roles.Contains("general") && admin.BoundTo == issue.Point)
-            && !(admin.Roles.Contains("sprvsr") && issue.Raiser == admin.Token))
+            || (!(admin.Roles.Contains(nameof(Admins.Roles.general)) && admin.BoundTo == issue.Point)
+            && !(admin.Roles.Contains(nameof(Admins.Roles.sprvsr)) && issue.Raiser == admin.Token))
         )
             return Results.Unauthorized();
 
@@ -142,13 +143,13 @@ public class Issues()
         switch (request.Action)
         {
             case "close":
-                update = new("$set", new BsonDocument("IsActive", false));
+                update = new(BsonOperations.Set, new BsonDocument("IsActive", false));
                 break;
             case "+monitor":
-                update = new("$set", new BsonDocument("IsMonitored", true));
+                update = new(BsonOperations.Set, new BsonDocument("IsMonitored", true));
                 break;
             case "-monitor":
-                update = new("$set", new BsonDocument("IsMonitored", false));
+                update = new(BsonOperations.Set, new BsonDocument("IsMonitored", false));
                 break;
             default:
                 return Results.BadRequest("Cannot perform any operation other than: \"close\", \"+monitor\", \"-monitor\"!");

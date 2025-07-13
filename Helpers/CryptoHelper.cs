@@ -7,6 +7,8 @@ namespace OpenCafe.Server.Helpers;
 /// </summary>
 public static class CryptoHelper
 {
+    public static string key = "key";
+
     /// <summary>
     /// Converts a plain string into a base64 encrypted string.
     /// </summary>

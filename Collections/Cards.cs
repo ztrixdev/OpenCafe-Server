@@ -6,7 +6,7 @@ using MongoDB.Driver;
 using OpenCafe.Server.DBmgmt;
 using OpenCafe.Server.Helpers;
 using System.Text;
-using XSystem.Security.Cryptography;
+using System.Security.Cryptography;
 
 namespace OpenCafe.Server.Collections;
 
@@ -64,22 +64,22 @@ public class Cards
         if (request == null || request.OwnerIID == 0)
             return Results.BadRequest("No Owner's ID to issue a card for.");
 
-        var customer = await Customers.GetCustomerBy(new KeyValuePair<string, string>("iid", $"{request.OwnerIID}"), database);
+        var customer = await Customers.GetCustomerBy(new KeyValuePair<Customers.GetCustomerByParameter, string>(Customers.GetCustomerByParameter.iid, $"{request.OwnerIID}"), database);
         if (customer == null)
             return Results.NotFound("Cannot issue a card for an unexistent customer.");
         if (customer.Card != null)
             return Results.Conflict("Cannot issue a card since it already exists.");
 
-        var cardCollection = database._database.GetCollection<Card>("cards");
+        var cardCollection = database._database.GetCollection<Card>(nameof(Database.Collections.cards));
         var newID = new Random().NextInt64();
-        var encID = await CryptoHelper.EncryptAsync(newID.ToString(), database.collectionEncryption["cards"]["key"]);
+        var encID = await CryptoHelper.EncryptAsync(newID.ToString(), database.collectionEncryption[nameof(Database.Collections.cards)]["key"]);
         var source = ASCIIEncoding.ASCII.GetBytes(newID.ToString());
         var hash = new MD5CryptoServiceProvider().ComputeHash(source);
         await cardCollection.InsertOneAsync(new Card(ownerIID: request.OwnerIID, id: encID, hash: hash.ToString(), balance: 0, orders: null));
 
         var filter = new BsonDocument("InternalID", request.OwnerIID);
-        var update = new BsonDocument("$set", new BsonDocument("Card", encID));
-        var res = await database._database.GetCollection<Customer>("customers").UpdateOneAsync(filter, update);
+        var update = new BsonDocument(BsonOperations.Set, new BsonDocument("Card", encID));
+        var res = await database._database.GetCollection<Customer>(nameof(Database.Collections.customers)).UpdateOneAsync(filter, update);
 
         return Results.Ok(res);
     }
@@ -105,7 +105,7 @@ public class Cards
 
         var source = ASCIIEncoding.ASCII.GetBytes(request.ID.ToString());
         var hashedID = new MD5CryptoServiceProvider().ComputeHash(source);
-        var cardCollection = database._database.GetCollection<Card>("cards");
+        var cardCollection = database._database.GetCollection<Card>(nameof(Database.Collections.cards));
         var card = await cardCollection.Find(card => card.Hash == hashedID.ToString()).FirstOrDefaultAsync();
 
         Dictionary<string, object> response;
@@ -147,13 +147,13 @@ public class Cards
         var loginRes = await Customers.Login(request, database);
         if (loginRes is OkObjectResult)
         {
-            var customer = await Customers.GetCustomerBy(new KeyValuePair<string, string>("email", request.Email), database);
+            var customer = await Customers.GetCustomerBy(new KeyValuePair<Customers.GetCustomerByParameter, string>(Customers.GetCustomerByParameter.email, request.Email), database);
 
-            var cardCollection = database._database.GetCollection<Card>("cards");
+            var cardCollection = database._database.GetCollection<Card>(nameof(Database.Collections.cards));
             var card = await cardCollection.Find(card => card.OwnerIID == customer.InternalID).FirstOrDefaultAsync();
             if (card == null) return Results.NotFound("No card has been registered for this user.");
 
-            var decodedCardID = await CryptoHelper.DecryptAsync(card.ID, database.collectionEncryption["cards"]["key"]);
+            var decodedCardID = await CryptoHelper.DecryptAsync(card.ID, database.collectionEncryption[nameof(Database.Collections.cards)]["key"]);
             var parseID = Int64.TryParse(decodedCardID, out var decID);
             if (!parseID) return Results.Conflict();
 
@@ -196,13 +196,13 @@ public class Cards
         if (request.ToRetract > balance)
             return Results.Conflict("Cannot retract more points than the amount present on balance.");
 
-        var cardCollection = database._database.GetCollection<Card>("cards");
+        var cardCollection = database._database.GetCollection<Card>(nameof(Database.Collections.cards));
 
         var source = ASCIIEncoding.ASCII.GetBytes(request.ID.ToString());
         var hashedID = new MD5CryptoServiceProvider().ComputeHash(source);
-        var filter = new BsonDocument("Hash", hashedID);
+        var filter = new BsonDocument(nameof(Card.Hash), hashedID);
         
-        var update = new BsonDocument("$set", new BsonDocument("Balance", balance - request.ToRetract));
+        var update = new BsonDocument(BsonOperations.Set, new BsonDocument(nameof(Card.Balance), balance - request.ToRetract));
         var res = cardCollection.UpdateOneAsync(filter, update);
         return Results.Ok(res);
      }

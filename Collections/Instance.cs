@@ -30,7 +30,7 @@ public class InstanceMgmt
 
     public static async Task<Instance> Load(Database database)
     {
-        return await database._database.GetCollection<Instance>("instances").Find(instance => !instance.IsBackup).FirstOrDefaultAsync();
+        return await database._database.GetCollection<Instance>(nameof(Database.Collections.instances)).Find(instance => !instance.IsBackup).FirstOrDefaultAsync();
     }
 
     public static async Task<IResult> Flash(FlashRequest request, Database database)
@@ -44,7 +44,7 @@ public class InstanceMgmt
         if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
-        var instanceCollection = database._database.GetCollection<Instance>("Instances");
+        var instanceCollection = database._database.GetCollection<Instance>(nameof(Database.Collections.instances));
         await instanceCollection.DeleteManyAsync(instance => instance.IsBackup == false);
         await instanceCollection.InsertOneAsync(request.Instance);
 
@@ -59,7 +59,7 @@ public class InstanceMgmt
         if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
-        var instanceCollection = database._database.GetCollection<Instance>("Instances");
+        var instanceCollection = database._database.GetCollection<Instance>(nameof(Database.Collections.instances));
         var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         bckp.IsBackup = false;
 
@@ -77,7 +77,7 @@ public class InstanceMgmt
         if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
-        var instanceCollection = database._database.GetCollection<Instance>("Instances");
+        var instanceCollection = database._database.GetCollection<Instance>(nameof(Database.Collections.instances));
         var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         if (bckp == null)
             return Results.NotFound();
@@ -97,7 +97,7 @@ public class InstanceMgmt
         if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
-        var instanceCollection = database._database.GetCollection<Instance>("Instances");
+        var instanceCollection = database._database.GetCollection<Instance>(nameof(Database.Collections.instances));
         var bckp = await instanceCollection.Find(instance => instance._id == request._id).FirstOrDefaultAsync();
         bckp.IsBackup = true;
 

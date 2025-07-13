@@ -111,19 +111,19 @@ public class DBConfig
         Console.WriteLine("Creating collection encryption keys...");
         dbConfig.CollectionEncryption = new Dictionary<string, Dictionary<string, string>>()
         {
-            { "admins", new Dictionary<string, string>
+            { nameof(Database.Collections.admins), new Dictionary<string, string>
                 {
-                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {CryptoHelper.key, CryptoHelper.RandomBase64Async().Result},
                 }
             },
-            { "customers", new Dictionary<string, string>
+            { nameof(Database.Collections.customers), new Dictionary<string, string>
                 {
-                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {CryptoHelper.key, CryptoHelper.RandomBase64Async().Result},
                 }
             },
-            {"cards", new Dictionary<string, string>
+            { nameof(Database.Collections.cards), new Dictionary<string, string>
                 {
-                    {"key", CryptoHelper.RandomBase64Async().Result},
+                    {CryptoHelper.key, CryptoHelper.RandomBase64Async().Result},
                 }
             }
         };

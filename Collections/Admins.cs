@@ -20,6 +20,12 @@ public class Admin(string name, string[] roles, int? boundTo, string token)
 
 public class Admins
 {
+
+    public enum Roles
+    {
+        general, sprvsr, head
+    }
+
     /// <summary>
     /// Login request body.
     /// </summary>
@@ -84,37 +90,37 @@ public class Admins
     /// <exception cref="ArgumentNullException">If the provided token is null or empty</exception>
     public static async Task<Admin> GetAdminByToken(string token, Database database)
     {
-            if (string.IsNullOrWhiteSpace(token))
-                throw new ArgumentNullException(nameof(token), "Token cannot be empty.");
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentNullException(nameof(token), "Token cannot be empty.");
 
-            string key = database.collectionEncryption["admins"]["key"];
-            var adminCollection = database._database.GetCollection<Admin>("admins");
+        string key = database.collectionEncryption[nameof(Database.Collections.admins)][CryptoHelper.key];
+        var adminCollection = database._database.GetCollection<Admin>(nameof(Database.Collections.admins));
 
-            var admins = await adminCollection.Find(_ => true).ToListAsync();
+        var admins = await adminCollection.Find(_ => true).ToListAsync();
 
-            foreach (var admin in admins)
+        foreach (var admin in admins)
+        {
+            try
             {
-                try
-                {
-                    string decryptedToken = await CryptoHelper.DecryptAsync(admin.Token, key);
+                string decryptedToken = await CryptoHelper.DecryptAsync(admin.Token, key);
 
-                    if (decryptedToken == token)
-                        return admin;
-                }
-                catch (CryptographicException)
-                {
-                    continue;
-                }
+                if (decryptedToken == token)
+                    return admin;
             }
+            catch (CryptographicException)
+            {
+                continue;
+            }
+        }
 
-            return null; // Not found
+        return null; // Not found
     }
 
     public static async Task<bool> CheckHead(string Token, Database database)
     {
         var admin = await GetAdminByToken(Token, database);
 
-        if (admin == null || !admin.Roles.Contains("head"))
+        if (admin == null || !admin.Roles.Contains(nameof(Roles.head)))
             return false;
         return !false;
     }
@@ -158,9 +164,9 @@ public class Admins
 
         if (admin != null && await CheckHead(admin.Token, database))
         {
-            var newToken = await CryptoHelper.EncryptAsync(await new Admins().GenTokenAsync(), database.collectionEncryption["admins"]["key"]);
-            var newAdmin = new Admin(name: request.Name, roles: ["general"], token: newToken, boundTo: null);
-            await database._database.GetCollection<Admin>("admins").InsertOneAsync(newAdmin);
+            var newToken = await CryptoHelper.EncryptAsync(await new Admins().GenTokenAsync(), database.collectionEncryption[nameof(Database.Collections.admins)][CryptoHelper.key]);
+            var newAdmin = new Admin(name: request.Name, roles: [nameof(Roles.general)], token: newToken, boundTo: null);
+            await database._database.GetCollection<Admin>(nameof(Database.Collections.admins)).InsertOneAsync(newAdmin);
             return Results.Ok(newAdmin);
         }
 
@@ -192,13 +198,13 @@ public class Admins
 
         if (
         adminObjects[0].Token == adminObjects[1].Token
-         ||  await CheckHead(adminObjects[0].Token, database) 
-         || (adminObjects[0].Roles.Contains("general") && adminObjects[1].Roles.Contains("sprvsr"))
+         || await CheckHead(adminObjects[0].Token, database)
+         || (adminObjects[0].Roles.Contains(nameof(Roles.general)) && adminObjects[1].Roles.Contains(nameof(Roles.sprvsr)))
          )
         {
-            var filter = new BsonDocument("Token", adminObjects[1].Token);
-            var update = new BsonDocument("$set", new BsonDocument("Name", request.Name));
-            var res = await database._database.GetCollection<Admin>("admins").UpdateOneAsync(filter, update);
+            var filter = new BsonDocument(nameof(Admin.Token), adminObjects[1].Token);
+            var update = new BsonDocument(BsonOperations.Set, new BsonDocument(nameof(Admin.Name), request.Name));
+            var res = await database._database.GetCollection<Admin>(nameof(Database.Collections.admins)).UpdateOneAsync(filter, update);
             return Results.Ok(res);
         }
 
@@ -228,9 +234,9 @@ public class Admins
 
         if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
-        if (await CheckHead(adminObjects[0].Token, database)  || adminObjects[0].Roles.Contains("general") && adminObjects[1].Roles.Contains("sprvsr"))
+        if (await CheckHead(adminObjects[0].Token, database) || adminObjects[0].Roles.Contains(nameof(Roles.general)) && adminObjects[1].Roles.Contains(nameof(Roles.sprvsr)))
         {
-            await database._database.GetCollection<Admin>("admins").DeleteOneAsync(admin => admin.Token == adminObjects[1].Token);
+            await database._database.GetCollection<Admin>(nameof(Database.Collections.admins)).DeleteOneAsync(admin => admin.Token == adminObjects[1].Token);
             return Results.Ok($"{adminObjects[1].Name} was deleted successfuly.");
         }
 
@@ -246,10 +252,10 @@ public class Admins
         if (admin == null) return Results.NotFound();
         if (!await CheckHead(admin.Token, database)) return Results.Unauthorized();
 
-        var adminObjects = await database._database.GetCollection<Admin>("admins").Find(_ => true).ToListAsync();
+        var adminObjects = await database._database.GetCollection<Admin>(nameof(Database.Collections.admins)).Find(_ => true).ToListAsync();
         foreach (var adminObject in adminObjects)
         {
-            adminObject.Token = await CryptoHelper.DecryptAsync(adminObject.Token, database.collectionEncryption["admins"]["key"]);
+            adminObject.Token = await CryptoHelper.DecryptAsync(adminObject.Token, database.collectionEncryption[nameof(Database.Collections.admins)][CryptoHelper.key]);
         }
 
         return Results.Ok(adminObjects);

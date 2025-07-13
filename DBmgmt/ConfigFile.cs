@@ -40,13 +40,7 @@ class ConfigFile
                 Task.Run(() => new Logger().LogException(exception));
                 throw new FormatException("The config file is corrupted. Please replace it with one of the backups or generate a new one.");
             }
-            var cfg = JsonSerializer.Deserialize<DBConfig>(json);
-            if (cfg == null)
-            {
-                // If there is no config in the config file... How?
-                throw new ArgumentNullException("cfg");
-            }
-
+            var cfg = JsonSerializer.Deserialize<DBConfig>(json) ?? throw new ArgumentNullException("cfg");
             return cfg;
         }
 

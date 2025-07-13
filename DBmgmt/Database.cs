@@ -14,6 +14,14 @@ public class Database
     public IMongoDatabase _database;
     public readonly Dictionary<string, Dictionary<string, string>> collectionEncryption;
 
+    public enum Collections
+    {
+        admins, points, instances, issues,
+        customers, cards,
+        menus, dishes,
+        images, strings
+    }
+
     public Database(DBConfig config)
     {
         connectionString = ConnectionString.Create(config);
@@ -70,12 +78,8 @@ public class Database
     /// <returns>true if it does, false if not.</returns>
     public bool CheckForOpenCafe()
     {
-        var areCollectionsPresent = new Dictionary<string, bool>()
-        {
-            { "customers", false }, { "admins", false },
-             {"menu", false}, { "dishes", false }, { "images", false }, {"cards", false}, {"issues", false},
-            { "points", false}, {"instances", false}, {"strings", false}
-        };
+        var areCollectionsPresent = Enum.GetNames<Collections>()
+            .ToDictionary(name => name, name => false);
 
         var collectionNames = _database.ListCollectionNames().ToList();
         foreach (var name in collectionNames)
@@ -105,9 +109,8 @@ public class Database
         var logger = new Logger();
         await logger.New(new Log(type: "Info", message: "Initializing database collections.", where: "Database::InitCollections()"));
 
-        var key = collectionEncryption["admins"]["key"];
-        var iv = collectionEncryption["admins"]["iv"];
-        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
+        var key = collectionEncryption[nameof(Collections.admins)][CryptoHelper.key];
+        if (string.IsNullOrEmpty(key))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             var e = new InvalidCredentialException(
@@ -116,7 +119,7 @@ public class Database
             throw e;
         }
 
-        string[] collectionNames = ["customers", "admins", "dishes", "images", "cards", "points", "issues", "instances", "strings", "menu"];
+        var collectionNames = Enum.GetNames<Collections>();
         foreach (var name in collectionNames)
         {
             await _database.CreateCollectionAsync(name);
@@ -132,11 +135,11 @@ public class Database
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.1.bckp"), firstHeadToken);
         await File.WriteAllTextAsync(Path.Combine(directoryPath, "firsthead_token.txt.2.bckp"), firstHeadToken);
         firstHeadToken = await CryptoHelper.EncryptAsync(firstHeadToken, key);
-        var adminCollection = _database.GetCollection<Admin>("admins");
+        var adminCollection = _database.GetCollection<Admin>(nameof(Collections.admins));
         // a lil bit of god system
         await adminCollection.InsertOneAsync(new Admin(name: "dollars out on top on god", roles: ["head"], token: firstHeadToken, boundTo: -1));
 
-        var menusCollection = _database.GetCollection<Menu>("menus");
+        var menusCollection = _database.GetCollection<Menu>(nameof(Collections));
         var generalMenu = new Menu(menuID: 1, Strings.GenSI("menu", 1, "name"), Strings.GenSI("menu", 1, "description"), null);
         await menusCollection.InsertOneAsync(generalMenu);
     }

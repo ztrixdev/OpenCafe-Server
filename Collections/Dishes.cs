@@ -1,34 +1,35 @@
-    using System.Data.Common;
-    using Microsoft.AspNetCore.Mvc;
+using System.Data.Common;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using MongoDB.Bson;
-    using MongoDB.Driver;
-    using OpenCafe.Server.DBmgmt;
+using MongoDB.Driver;
+using OpenCafe.Server.DBmgmt;
+using OpenCafe.Server.Helpers;
 
-    namespace OpenCafe.Server.Collections;
+namespace OpenCafe.Server.Collections;
 
-    public class Dish
-    (
-        int dishID,
-        int price,
-        bool isOnSale,
-        int oldPrice,
-        string nameSI,
-        string descSI,
-        Dictionary<string, int> nutriProfile,
-        string[] images
-    )
-    {
-        public ObjectId Id { get; set; }
-        public int DishID { get; set; } = dishID;
-        public int Price { get; set; } = price;
-        public bool IsOnSale { get; set; } = isOnSale;
-        public int OldPrice { get; set; } = oldPrice;
-        public string NameSI { get; set; } = nameSI;
-        public string DescriptionSI { get; set; } = descSI;
-        public Dictionary<string, int> NutriProfile { get; set; } = nutriProfile;
-        public string[] Images { get; set; } = images;
-    }
+public class Dish
+(
+    int dishID,
+    int price,
+    bool isOnSale,
+    int oldPrice,
+    string nameSI,
+    string descSI,
+    Dictionary<string, int> nutriProfile,
+    string[] images
+)
+{
+    public ObjectId Id { get; set; }
+    public int DishID { get; set; } = dishID;
+    public int Price { get; set; } = price;
+    public bool IsOnSale { get; set; } = isOnSale;
+    public int OldPrice { get; set; } = oldPrice;
+    public string NameSI { get; set; } = nameSI;
+    public string DescriptionSI { get; set; } = descSI;
+    public Dictionary<string, int> NutriProfile { get; set; } = nutriProfile;
+    public string[] Images { get; set; } = images;
+}
 
 public class Dishes
 {
@@ -60,7 +61,7 @@ public class Dishes
 
     public static async Task<Dish> GetDishByID(int ID, Database database)
     {
-        return await database._database.GetCollection<Dish>("dishes").Find(dish => dish.DishID == ID).FirstOrDefaultAsync();
+        return await database._database.GetCollection<Dish>(nameof(Database.Collections.dishes)).Find(dish => dish.DishID == ID).FirstOrDefaultAsync();
     }
 
     /// <summary>
@@ -82,7 +83,7 @@ public class Dishes
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || admin.Roles.Contains("general"))
+        if (admin == null || admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
         List<string> dishImgObjIdArr = new();
@@ -101,8 +102,8 @@ public class Dishes
         var newDishID = rnd.Next();
         while (await GetDishByID(newDishID, database) != null)
             newDishID = rnd.Next();
-        string nameSI = Strings.GenSI(whatFor: "dish", originalID: newDishID, whereAt: "name"),
-        descSI = Strings.GenSI(whatFor: "dish", originalID: newDishID, whereAt: "description");
+        string nameSI = Strings.GenSI(whatFor: nameof(Strings.AllowedWhatFor.DISH), originalID: newDishID, whereAt: nameof(Strings.AllowedWhereAt.NAME)),
+        descSI = Strings.GenSI(whatFor: nameof(Strings.AllowedWhatFor.DISH), originalID: newDishID, whereAt: nameof(Strings.AllowedWhereAt.DESCRIPTION));
 
         var instance = await InstanceMgmt.Load(database);
 
@@ -114,7 +115,7 @@ public class Dishes
         await Strings.InsertNew(@string: DCstrName, database);
         await Strings.InsertNew(@string: DCstrDesc, database);
 
-        var dishesCollection = database._database.GetCollection<Dish>("dishes");
+        var dishesCollection = database._database.GetCollection<Dish>(nameof(Database.Collections.dishes));
         var dish = new Dish(newDishID, request.Price, false, request.Price, nameSI, descSI, request.NutriProfile, [.. dishImgObjIdArr]);
         await dishesCollection.InsertOneAsync(dish);
 
@@ -140,15 +141,15 @@ public class Dishes
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general"))
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
-        var dishesCollection = database._database.GetCollection<Dish>("dishes");
+        var dishesCollection = database._database.GetCollection<Dish>(nameof(Database.Collections.dishes));
 
         var dish = await dishesCollection.Find(dish => dish.DishID == request.DID).FirstOrDefaultAsync();
         if (dish == null) return Results.NotFound("Cannot find a dish with such an ID");
 
-        BsonDocument filter = new("DishID", request.DID);
+        BsonDocument filter = new(nameof(Dish.DishID), request.DID);
         BsonDocument update;
         foreach (var key in request.Updates.Keys)
         {
@@ -157,7 +158,7 @@ public class Dishes
                 case "+image":
                     if (await Images.GetOne(ObjectId.Parse(request.Updates[key]), database) is OkObjectResult)
                     {
-                        update = new("$push", new BsonDocument("Images", request.Updates[key]));
+                        update = new(BsonOperations.Push, new BsonDocument(nameof(Database.Collections.customers), request.Updates[key]));
                         await dishesCollection.UpdateOneAsync(filter, update);
                     }
                     else return Results.Conflict("Cannot upload a non-existent image!");
@@ -170,7 +171,7 @@ public class Dishes
                         && dish.Images.Contains(request.Updates[key])
                     )
                     {
-                        update = new("$pull", new BsonDocument("Images", request.Updates[key]));
+                        update = new(BsonOperations.Pull, new BsonDocument(nameof(Database.Collections.customers), request.Updates[key]));
                         await dishesCollection.UpdateOneAsync(filter, update);
                     }
                     break;
@@ -204,7 +205,7 @@ public class Dishes
                         if (!canBeParsed)
                             return Results.BadRequest("Cannot parse a new nutritional value into a valid integer!");
 
-                        update = new("$set", new BsonDocument(key, newValue));
+                        update = new(BsonOperations.Set, new BsonDocument(key, newValue));
                         await dishesCollection.UpdateOneAsync(filter, update);
 
                         break;
@@ -235,7 +236,7 @@ public class Dishes
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || admin.Roles.Contains("general"))
+        if (admin == null || admin.Roles.Contains(nameof(Admins.Roles.general)))
             return Results.Unauthorized();
 
         var dish = await GetDishByID(request.DID, database);
@@ -243,8 +244,10 @@ public class Dishes
             return Results.NotFound("There is no such dish to delete.");
 
         BsonDocument filter = new("DishID", request.DID);
-        var deletionResult = await database._database.GetCollection<Dish>("dishes").DeleteOneAsync(filter);
+        var deletionResult = await database._database.GetCollection<Dish>(nameof(Database.Collections.dishes)).DeleteOneAsync(filter);
 
         return Results.Ok(deletionResult);
     }
 }
+
+

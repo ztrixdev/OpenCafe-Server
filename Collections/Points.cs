@@ -55,7 +55,7 @@ public class Points
 
         var newPoint = new Point(new Random().Next(), null, request.Address, null, null, null, null);
 
-        await database._database.GetCollection<Point>("points").InsertOneAsync(newPoint);
+        await database._database.GetCollection<Point>(nameof(Database.Collections.points)).InsertOneAsync(newPoint);
         return Results.Ok();
     }
 
@@ -77,28 +77,28 @@ public class Points
             return Results.BadRequest("One or more of the request fields is not specified!");
 
         var admin = await Admins.GetAdminByToken(request.Token, database);
-        if (admin == null || !admin.Roles.Contains("general") || admin.BoundTo != request.PID)
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general)) || admin.BoundTo != request.PID)
             return Results.Unauthorized();
 
-        var pointsCollection = database._database.GetCollection<Point>("points");
+        var pointsCollection = database._database.GetCollection<Point>(nameof(Database.Collections.points));
 
         var point = await pointsCollection.Find(point => point.PointID == request.PID).FirstOrDefaultAsync();
         if (point == null) return Results.NotFound("Cannot find a point with such an ID");
 
-        BsonDocument filter = new("PointID", request.PID);
+        BsonDocument filter = new(nameof(Point.PointID), request.PID);
         BsonDocument update;
         foreach (var key in request.Updates.Keys)
         {
             switch (key)
             {
                 case "address":
-                    update = new("$set", new BsonDocument("Address", request.Updates[key]));
+                    update = new(BsonOperations.Set, new BsonDocument(nameof(Point.Address), request.Updates[key]));
                     await pointsCollection.UpdateOneAsync(filter, update);
                     break;
                 case "+pic":
                     if (await Images.GetOne(ObjectId.Parse(request.Updates[key]), database) is OkObjectResult)
                     {
-                        update = new("$push", new BsonDocument("Pics", request.Updates[key]));
+                        update = new(BsonOperations.Push, new BsonDocument(nameof(Point.Pics), request.Updates[key]));
                         await pointsCollection.UpdateOneAsync(filter, update);
                     }
                     else return Results.Conflict("Cannot upload a non-existent image!");
@@ -111,7 +111,7 @@ public class Points
                         && point.Pics.Contains(request.Updates[key])
                     )
                     {
-                        update = new("$pull", new BsonDocument("Pics", request.Updates[key]));
+                        update = new(BsonOperations.Pull, new BsonDocument(nameof(Point.Pics), request.Updates[key]));
                         await pointsCollection.UpdateOneAsync(filter, update);
                     }
                     break;
@@ -142,19 +142,19 @@ public class Points
         if (!await Admins.CheckHead(request.Token, database))
             return Results.Unauthorized();
 
-        var pointsCollection = database._database.GetCollection<Point>("points");
+        var pointsCollection = database._database.GetCollection<Point>(nameof(Database.Collections.points));
         var point = await pointsCollection.Find(point => point.PointID == request.PID).FirstOrDefaultAsync();
         if (point == null)
             return Results.NotFound("Cannot find any point with the provided PointID!");
 
         // Unbind all admins associated with the point that is being removed from the system
-        var adminsCollection = database._database.GetCollection<Admin>("admins");
-        var filter = new BsonDocument("BoundTo", request.PID);
-        var update = new BsonDocument("$set", new BsonDocument("BoundTo", -1));
+        var adminsCollection = database._database.GetCollection<Admin>(nameof(Database.Collections.admins));
+        var filter = new BsonDocument(nameof(Admin.BoundTo), request.PID);
+        var update = new BsonDocument(BsonOperations.Set, new BsonDocument(nameof(Admin.BoundTo), -1));
         await adminsCollection.UpdateManyAsync(filter, update);
 
         // Remove the point
-        var point_filter = new BsonDocument("PointID", request.PID);
+        var point_filter = new BsonDocument(nameof(Point.PointID), request.PID);
         await pointsCollection.DeleteOneAsync(point_filter);
 
         return Results.Ok();
@@ -183,13 +183,13 @@ public class Points
 
         if (adminObjects.Any(x => x == null)) return Results.NotFound("Token1 or Token2 holder was not found in the database.");
 
-        var pointsCollection = database._database.GetCollection<Point>("points");
-        var adminsCollection = database._database.GetCollection<Admin>("admins");
+        var pointsCollection = database._database.GetCollection<Point>(nameof(Database.Collections.points));
+        var adminsCollection = database._database.GetCollection<Admin>(nameof(Database.Collections.admins));
 
         if
         (
-            (adminObjects[0].Roles.Contains("general") && adminObjects[0].BoundTo == request.PID && adminObjects[1].Roles.Contains("sprvsr"))
-            || (await Admins.CheckHead(adminObjects[0].Token, database) && (adminObjects[1].Roles.Contains("general") || adminObjects[1].Roles.Contains("sprvsr")))
+            (adminObjects[0].Roles.Contains(nameof(Admins.Roles.general)) && adminObjects[0].BoundTo == request.PID && adminObjects[1].Roles.Contains(nameof(Admins.Roles.sprvsr)))
+            || (await Admins.CheckHead(adminObjects[0].Token, database) && (adminObjects[1].Roles.Contains(nameof(Admins.Roles.general)) || adminObjects[1].Roles.Contains(nameof(Admins.Roles.sprvsr))))
         )
         {
             string BsonAction;
@@ -197,22 +197,22 @@ public class Points
             switch (request.Action)
             {
                 case "hire":
-                    BsonAction = "$push"; UpdateID = request.PID;
+                    BsonAction = BsonOperations.Push; UpdateID = request.PID;
                     break;
                 case "fire":
-                    BsonAction = "$pull"; UpdateID = -1;
+                    BsonAction = BsonOperations.Pull; UpdateID = -1;
                     break;
                 default:
                     return Results.BadRequest("Cannot perform any operation other than hiring or firing!");
             }
 
-            var point_filter = new BsonDocument("PointID", request.PID);
+            var point_filter = new BsonDocument(nameof(Point.PointID), request.PID);
             var encryptedToken = adminObjects[1].Token;
-            var point_update = new BsonDocument(BsonAction, new BsonDocument("Supervisors", encryptedToken));
+            var point_update = new BsonDocument(BsonAction, new BsonDocument(nameof(Point.Supervisors), encryptedToken));
             await pointsCollection.UpdateOneAsync(point_filter, point_update);
 
-            var admin_filter = new BsonDocument("Token", request.Token2);
-            var admin_update = new BsonDocument("$set", new BsonDocument("BoundTo", UpdateID));
+            var admin_filter = new BsonDocument(nameof(Admin.Token), request.Token2);
+            var admin_update = new BsonDocument(BsonOperations.Set, new BsonDocument(nameof(Admin.BoundTo), UpdateID));
             await adminsCollection.UpdateOneAsync(admin_filter, admin_update);
 
             return Results.Ok();
@@ -225,7 +225,7 @@ public class Points
     {
         if (PID == -1) return Results.BadRequest("Point with a PointID -1 cannot exist.");
 
-        var point = await database._database.GetCollection<Point>("points").Find(point => point.PointID == PID).FirstOrDefaultAsync();
+        var point = await database._database.GetCollection<Point>(nameof(Database.Collections.points)).Find(point => point.PointID == PID).FirstOrDefaultAsync();
 
         if (point == null) return Results.NotFound();
         else return Results.Ok(point);
@@ -233,7 +233,7 @@ public class Points
     
     public static async Task<IResult> LoadAll(Database database)
     {
-        var points = await database._database.GetCollection<Point>("points").Find(_ => true).ToListAsync();
+        var points = await database._database.GetCollection<Point>(nameof(Database.Collections.points)).Find(_ => true).ToListAsync();
         return Results.Ok(points);
     }
 }

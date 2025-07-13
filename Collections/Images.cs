@@ -68,7 +68,7 @@ public class Images
             return Results.UnprocessableEntity("Uploading images bigger then 8 MB in size is not supported.");
 
         var admin = await Admins.GetAdminByToken(request.Author, database);
-        if (admin == null || !admin.Roles.Contains("general")) 
+        if (admin == null || !admin.Roles.Contains(nameof(Admins.Roles.general))) 
             return Results.Unauthorized();
 
         var fileext = Path.GetExtension(request.Image.FileName);
@@ -83,7 +83,7 @@ public class Images
             await request.Image.CopyToAsync(stream);
         }
 
-        var imageCollection = database._database.GetCollection<Image>("images");
+        var imageCollection = database._database.GetCollection<Image>(nameof(Database.Collections.customers));
         await imageCollection.InsertOneAsync(new Image(filename: imgFileName, author: admin.Token, alt: request.Alt));
 
         return Results.Ok("fs/img/" + imgFileName);
@@ -109,7 +109,7 @@ public class Images
         if (isAdmin is UnauthorizedResult) 
             return isAdmin;
 
-        var imageCollection = database._database.GetCollection<Image>("images");
+        var imageCollection = database._database.GetCollection<Image>(nameof(Database.Collections.customers));
         var image = await imageCollection.Find(img => img._id == request.ID).FirstOrDefaultAsync();
         if (image == null)
             return Results.NotFound("An image with the specified ID was not found in the database!");
@@ -128,7 +128,7 @@ public class Images
     /// <returns>OK with a list of all images.</returns>
     public static async Task<IResult> GetAll(Database database)
     {
-        var imageCollection = database._database.GetCollection<Image>("images");
+        var imageCollection = database._database.GetCollection<Image>(nameof(Database.Collections.images));
         var images = await imageCollection.Find(_ => true).ToListAsync();
 
         return Results.Ok(images);
@@ -144,7 +144,7 @@ public class Images
     /// </returns>
     public static async Task<IResult> GetOne(ObjectId _id, Database database)
     {
-        var imageCollection = database._database.GetCollection<Image>("images");
+        var imageCollection = database._database.GetCollection<Image>(nameof(Database.Collections.images));
         var image = await imageCollection.Find(img => img._id == _id).FirstOrDefaultAsync();
         if (image == null)
             return Results.NotFound();

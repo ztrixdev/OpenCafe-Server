@@ -65,20 +65,28 @@ public class Customers
     /// </returns>
     /// <exception cref="ArgumentException">If the Parameter's values are invalid/empty/not matching the "iid or email" template</exception>
     /// <exception cref="FormatException">If the IID provided cannot be converted to a number</exception>
-    public static async Task<Customer> GetCustomerBy(KeyValuePair<string, string> Parameter, Database database)
-    {
-        var customerCollection = database._database.GetCollection<Customer>("customers");
+    /// 
 
-        if (string.IsNullOrWhiteSpace(Parameter.Key) || string.IsNullOrWhiteSpace(Parameter.Value))
+    public enum GetCustomerByParameter
+    {
+        iid,
+        email
+    }
+
+    public static async Task<Customer> GetCustomerBy(KeyValuePair<GetCustomerByParameter, string> Parameter, Database database)
+    {
+        var customerCollection = database._database.GetCollection<Customer>(nameof(Database.Collections.customers));
+
+        if (string.IsNullOrWhiteSpace(Parameter.Value))
             throw new ArgumentException("Cannot use null or empty data as search parameters.");
 
-        if (!Parameter.Key.Equals("iid", StringComparison.CurrentCultureIgnoreCase) && !Parameter.Key.Equals("email", StringComparison.CurrentCultureIgnoreCase))
+        if (Parameter.Key != GetCustomerByParameter.email || Parameter.Key != GetCustomerByParameter.iid)
             throw new ArgumentException("Cannot find customers using data other than InternalID or email.");
 
         Customer? customer;
-        switch (Parameter.Key.ToLower())
+        switch (Parameter.Key)
         {
-            case "iid":
+            case GetCustomerByParameter.iid:
                 long iid = 0;
                 var iidParse = Int64.TryParse(Parameter.Value, out iid);
                 if (!iidParse)
@@ -86,7 +94,7 @@ public class Customers
 
                 customer = await customerCollection.Find(customer => customer.InternalID == iid).FirstOrDefaultAsync();
                 break;
-            case "email":
+            case GetCustomerByParameter.email:
                 customer = await customerCollection.Find(customer => customer.Email == Parameter.Value).FirstOrDefaultAsync();
                 break;
             default:
@@ -114,7 +122,7 @@ public class Customers
         if (request.Password.Length < 8)
             return Results.BadRequest("The provided password doesn't match the length requirement.");
 
-        if (await GetCustomerBy(new KeyValuePair<string, string>("email", request.Email), database) != null)
+        if (await GetCustomerBy(new KeyValuePair<GetCustomerByParameter, string>(GetCustomerByParameter.email, request.Email), database) != null)
             return Results.Conflict("A customer with the provided email already exists in the database.");
 
         var encryptedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -122,17 +130,17 @@ public class Customers
         var random = new Random();
         long newIID = random.NextInt64();
         // If the IID is taken, generates a new one untill it's free.
-        while (await GetCustomerBy(new KeyValuePair<string, string>("iid", $"{newIID}"), database) != null)
+        while (await GetCustomerBy(new KeyValuePair<GetCustomerByParameter, string>(GetCustomerByParameter.iid, $"{newIID}"), database) != null)
         {
             newIID = random.NextInt64();
             continue;
         }
 
         var customer = new Customer(internalID: newIID, username: request.Username, email: request.Email, isEmailVerified: false, password: encryptedPassword, null, null, null);
-        var customerCollection = database._database.GetCollection<Customer>("customers");
+        var customerCollection = database._database.GetCollection<Customer>(nameof(Database.Collections.customers));
         await customerCollection.InsertOneAsync(customer);
 
-        return Results.Ok(await GetCustomerBy(new KeyValuePair<string, string>("iid", $"{newIID}"), database));
+        return Results.Ok(await GetCustomerBy(new KeyValuePair<GetCustomerByParameter, string>(GetCustomerByParameter.iid, $"{newIID}"), database));
     }
 
     /// <summary>
@@ -151,7 +159,7 @@ public class Customers
         if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return Results.BadRequest("One or more of the request fields is not provided.");
 
-        var customer = await GetCustomerBy(new KeyValuePair<string, string>("email", request.Email), database);
+        var customer = await GetCustomerBy(new KeyValuePair<GetCustomerByParameter, string>(GetCustomerByParameter.email, request.Email), database);
         if (customer == null)
             return Results.NotFound("Cannot find a user with this email in the databse.");
 
